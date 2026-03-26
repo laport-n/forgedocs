@@ -1,17 +1,29 @@
-import { defineConfig } from 'vitepress'
 import fs from 'node:fs'
 import path from 'node:path'
+import type { DefaultTheme } from 'vitepress'
+import { defineConfig } from 'vitepress'
+
+interface DocforgeConfig {
+  title?: string
+  description?: string
+  github?: string
+  scanDirs?: string[]
+  nestedDirs?: string[]
+  extraExcludes?: string[]
+}
 
 // Load user config
-let userConfig: any = {}
+let userConfig: DocforgeConfig = {}
 const userConfigPath = path.resolve('docsite.config.mjs')
 if (fs.existsSync(userConfigPath)) {
   try {
     userConfig = (await import(`file://${userConfigPath}`)).default || {}
-  } catch { /* use defaults */ }
+  } catch {
+    /* use defaults */
+  }
 }
 
-const siteTitle = userConfig.title || 'Docsite'
+const siteTitle = userConfig.title || 'Docforge'
 const siteDescription = userConfig.description || 'Architecture documentation for your services'
 const githubUrl = userConfig.github || ''
 const extraExcludes: string[] = userConfig.extraExcludes || []
@@ -48,7 +60,9 @@ for (const s of services) {
           rewrites[`content/${s}/docs/${entry.name}/:file.md`] = `${s}/docs/${entry.name}/:file.md`
         }
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   }
 
   // Extra root markdown files (e.g. README-auth-control.md)
@@ -61,17 +75,19 @@ for (const s of services) {
           rewrites[`content/${s}/${file}`] = `${s}/${slug}.md`
         }
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   }
 }
 
 // Build sidebar dynamically by scanning each service's docs
 function buildSidebar(service: string) {
   const serviceDir = path.join(contentDir, service)
-  const items: any[] = []
+  const items: DefaultTheme.SidebarItem[] = []
 
   // Main section
-  const mainItems: any[] = [{ text: 'Home', link: `/${service}/` }]
+  const mainItems: DefaultTheme.SidebarItem[] = [{ text: 'Home', link: `/${service}/` }]
   if (fs.existsSync(path.join(serviceDir, 'ARCHITECTURE.md'))) {
     mainItems.push({ text: 'Architecture', link: `/${service}/architecture` })
   }
@@ -82,11 +98,16 @@ function buildSidebar(service: string) {
       for (const file of fs.readdirSync(serviceDir)) {
         if (file.endsWith('.md') && !['README.md', 'ARCHITECTURE.md', 'CLAUDE.md'].includes(file)) {
           const slug = file.replace('.md', '').toLowerCase()
-          const label = file.replace('.md', '').replace(/[-_]/g, ' ').replace(/README-?/i, '')
+          const label = file
+            .replace('.md', '')
+            .replace(/[-_]/g, ' ')
+            .replace(/README-?/i, '')
           mainItems.push({ text: label, link: `/${service}/${slug}` })
         }
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   }
 
   items.push({ text: formatServiceName(service), items: mainItems })
@@ -94,12 +115,12 @@ function buildSidebar(service: string) {
   // Guides (docs/ flat files, excluding adr/ and features/)
   const docsDir = path.join(serviceDir, 'docs')
   if (fs.existsSync(docsDir)) {
-    const guideItems: any[] = []
+    const guideItems: DefaultTheme.SidebarItem[] = []
     try {
       for (const entry of fs.readdirSync(docsDir, { withFileTypes: true })) {
         if (entry.isFile() && entry.name.endsWith('.md') && entry.name !== 'README.md') {
           const slug = entry.name.replace('.md', '')
-          const label = slug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+          const label = slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
           guideItems.push({ text: label, link: `/${service}/docs/${slug}` })
         }
         // Subdirectories (e.g. authorization/) but not adr/ or features/
@@ -109,14 +130,20 @@ function buildSidebar(service: string) {
             for (const sub of fs.readdirSync(subDir)) {
               if (sub.endsWith('.md')) {
                 const subSlug = sub.replace('.md', '')
-                const subLabel = `${entry.name}/${subSlug}`.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+                const subLabel = `${entry.name}/${subSlug}`
+                  .replace(/[-_]/g, ' ')
+                  .replace(/\b\w/g, (c) => c.toUpperCase())
                 guideItems.push({ text: subLabel, link: `/${service}/docs/${entry.name}/${subSlug}` })
               }
             }
-          } catch { /* skip */ }
+          } catch {
+            /* skip */
+          }
         }
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     if (guideItems.length > 0) {
       guideItems.sort((a, b) => a.text.localeCompare(b.text))
@@ -127,21 +154,25 @@ function buildSidebar(service: string) {
   // Features (docs/features/*.md)
   const featuresDir = path.join(docsDir, 'features')
   if (fs.existsSync(featuresDir)) {
-    const featureItems: any[] = []
+    const featureItems: DefaultTheme.SidebarItem[] = []
     try {
       for (const file of fs.readdirSync(featuresDir).sort()) {
         if (!file.endsWith('.md')) continue
         const slug = file.replace('.md', '')
         const filePath = path.join(featuresDir, file)
-        let label = slug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+        let label = slug.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
         try {
           const content = fs.readFileSync(filePath, 'utf-8')
           const match = content.match(/^#\s+(.+)$/m)
           if (match) label = match[1].trim()
-        } catch { /* keep slug-derived label */ }
+        } catch {
+          /* keep slug-derived label */
+        }
         featureItems.push({ text: label, link: `/${service}/docs/features/${slug}` })
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     if (featureItems.length > 0) {
       items.push({ text: 'Features', collapsed: false, items: featureItems })
@@ -151,16 +182,21 @@ function buildSidebar(service: string) {
   // ADRs
   const adrDir = path.join(docsDir, 'adr')
   if (fs.existsSync(adrDir)) {
-    const adrItems: any[] = []
+    const adrItems: DefaultTheme.SidebarItem[] = []
     try {
       for (const file of fs.readdirSync(adrDir).sort()) {
         if (file.endsWith('.md') && file !== 'README.md') {
           const slug = file.replace('.md', '')
-          const label = slug.replace(/^(\d+)-/, '$1 - ').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+          const label = slug
+            .replace(/^(\d+)-/, '$1 - ')
+            .replace(/-/g, ' ')
+            .replace(/\b\w/g, (c) => c.toUpperCase())
           adrItems.push({ text: label, link: `/${service}/docs/adr/${slug}` })
         }
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     if (adrItems.length > 0) {
       items.push({ text: 'Architecture Decision Records', collapsed: false, items: adrItems })
@@ -173,12 +209,12 @@ function buildSidebar(service: string) {
 function formatServiceName(slug: string): string {
   return slug
     .split('-')
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ')
 }
 
 // Build sidebar config for all services
-const sidebar: Record<string, any> = {}
+const sidebar: Record<string, DefaultTheme.SidebarItem[]> = {}
 for (const service of services) {
   sidebar[`/${service}/`] = buildSidebar(service)
 }
@@ -267,7 +303,7 @@ const srcExclude = [
 ]
 
 // Social links (only add GitHub if configured)
-const socialLinks: any[] = []
+const socialLinks: DefaultTheme.SidebarItem[] = []
 if (githubUrl) {
   socialLinks.push({ icon: 'github', link: githubUrl })
 }
@@ -297,7 +333,7 @@ export default defineConfig({
   rewrites,
 
   themeConfig: {
-    nav: services.map(s => ({
+    nav: services.map((s) => ({
       text: formatServiceName(s),
       link: `/${s}/`,
     })),

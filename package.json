@@ -1,18 +1,33 @@
 {
-  "name": "docsite",
-  "version": "0.2.0",
+  "name": "@docforge/cli",
+  "version": "0.3.0",
   "description": "Architecture documentation framework for codebases. Auto-discovers repos, renders docs with VitePress, and maintains them with AI-assisted commands.",
   "type": "module",
   "license": "MIT",
   "author": "Nicolas Laporte",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nlaporte/docsite.git"
+    "url": "https://github.com/nlaporte/docforge.git"
   },
-  "homepage": "https://github.com/nlaporte/docsite",
+  "homepage": "https://github.com/nlaporte/docforge",
   "bugs": {
-    "url": "https://github.com/nlaporte/docsite/issues"
+    "url": "https://github.com/nlaporte/docforge/issues"
   },
+  "bin": {
+    "docforge": "bin/docforge.mjs"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "scripts/",
+    "templates/",
+    ".vitepress/config.ts",
+    "index.md",
+    "docsite.config.mjs",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "keywords": [
     "documentation",
     "architecture",
@@ -21,7 +36,8 @@
     "claude-code",
     "ai-agents",
     "docs-as-code",
-    "architecture-decision-records"
+    "architecture-decision-records",
+    "docforge"
   ],
   "engines": {
     "node": ">=18.0.0"
@@ -33,9 +49,15 @@
     "docs:build": "node scripts/setup.mjs --check && vitepress build",
     "docs:preview": "vitepress preview",
     "install-commands": "node scripts/install-commands.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write ."
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.9",
+    "@vitest/coverage-v8": "^4.1.2",
     "vitepress": "^1.6.3",
     "vitest": "^4.1.2"
   }

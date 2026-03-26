@@ -28,7 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Package version bumped to 0.3.0
 - Scripts refactored to use shared `lib/` modules
 - Repository URLs updated to `laport-n/forgedocs`
-- Documentation rewritten for Docforge branding and CLI workflow
+- Documentation rewritten for Forgedocs branding and CLI workflow
 
 ## [0.2.0] — 2026-03-26
 

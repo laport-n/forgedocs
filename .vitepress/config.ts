@@ -3,7 +3,7 @@ import path from 'node:path'
 import type { DefaultTheme } from 'vitepress'
 import { defineConfig } from 'vitepress'
 
-interface DocforgeConfig {
+interface ForgedocsConfig {
   title?: string
   description?: string
   github?: string
@@ -13,7 +13,7 @@ interface DocforgeConfig {
 }
 
 // Load user config
-let userConfig: DocforgeConfig = {}
+let userConfig: ForgedocsConfig = {}
 const userConfigPath = path.resolve('docsite.config.mjs')
 if (fs.existsSync(userConfigPath)) {
   try {
@@ -23,7 +23,7 @@ if (fs.existsSync(userConfigPath)) {
   }
 }
 
-const siteTitle = userConfig.title || 'Docforge'
+const siteTitle = userConfig.title || 'Forgedocs'
 const siteDescription = userConfig.description || 'Architecture documentation for your services'
 const githubUrl = userConfig.github || ''
 const extraExcludes: string[] = userConfig.extraExcludes || []

@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: Docforge
+  name: Forgedocs
   text: Architecture Documentation That Stays Accurate
   tagline: Auto-discovered from your repos. Verified by invariant checks. Maintained by AI-assisted commands.
   actions:

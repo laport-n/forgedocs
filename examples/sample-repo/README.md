@@ -1,6 +1,6 @@
 # Sample Service
 
-A sample repository showing the documentation structure for Docforge.
+A sample repository showing the documentation structure for Forgedocs.
 
 ## Setup
 
@@ -11,7 +11,7 @@ npm run dev
 
 ## Overview
 
-This is a demo service that demonstrates how to structure documentation for use with [Docforge](https://github.com/laport-n/forgedocs).
+This is a demo service that demonstrates how to structure documentation for use with [Forgedocs](https://github.com/laport-n/forgedocs).
 
 ## Files
 

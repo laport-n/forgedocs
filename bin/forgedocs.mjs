@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import readline from 'node:readline'
 import { loadConfig, loadReposConfig, saveReposConfig } from '../lib/config.mjs'
-import { isValidRepo, scanForRepos } from '../lib/discovery.mjs'
+import { detectScanDirs, isValidRepo, scanForRepos } from '../lib/discovery.mjs'
 import { installTemplates } from '../lib/installer.mjs'
 import { linkRepos } from '../lib/linker.mjs'
 import { expandHome } from '../lib/utils.mjs'
@@ -46,10 +46,10 @@ const command = process.argv[2]
 const args = process.argv.slice(3)
 const hasFlag = (flag) => args.includes(flag)
 
-async function askAddMore() {
+function ask(question) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
   return new Promise((resolve) => {
-    rl.question('Add a repo manually? (path or empty to skip): ', (answer) => {
+    rl.question(question, (answer) => {
       rl.close()
       resolve(answer.trim())
     })
@@ -75,6 +75,7 @@ function ensureVitepressFiles() {
 
 async function cmdInit() {
   const config = await loadConfig(CWD)
+  const homeDir = (await import('node:os')).default.homedir()
 
   console.log('\nForgedocs Setup\n')
 
@@ -90,28 +91,59 @@ async function cmdInit() {
     }
   }
 
-  // Build search directories
-  const searchDirs = [path.resolve(CWD, '..'), ...config.scanDirs.map((d) => expandHome(d))]
+  // Build search directories: configured + auto-detected
+  const configuredDirs = config.scanDirs.map((d) => expandHome(d))
+  const detectedDirs = detectScanDirs(homeDir)
+  const allDirs = new Set([path.resolve(CWD, '..'), ...configuredDirs, ...detectedDirs])
 
   // Auto-detect new repos
-  console.log('\nScanning for repositories...\n')
-  for (const searchDir of searchDirs) {
+  console.log('Scanning for repositories...\n')
+  const discovered = {}
+  for (const searchDir of allDirs) {
     const found = scanForRepos(searchDir, config.nestedDirs)
     for (const [name, repoPath] of Object.entries(found)) {
       if (!repos[name]) {
-        repos[name] = repoPath
-        console.log(`  Found: ${name} -> ${repoPath}`)
+        discovered[name] = repoPath
       }
     }
   }
 
-  if (Object.keys(repos).length === 0) {
-    console.log('  No repos found automatically.\n')
+  // Interactive selection
+  if (Object.keys(discovered).length > 0) {
+    console.log(`Found ${Object.keys(discovered).length} new repo(s):\n`)
+    const entries = Object.entries(discovered).sort(([a], [b]) => a.localeCompare(b))
+
+    for (let i = 0; i < entries.length; i++) {
+      const [name, repoPath] = entries[i]
+      console.log(`  [${i + 1}] ${name}`)
+      console.log(`      ${repoPath}`)
+    }
+
+    console.log()
+    const answer = await ask('Which repos to add? (a=all, comma-separated numbers, or enter to skip): ')
+
+    if (answer.toLowerCase() === 'a' || answer.toLowerCase() === 'all') {
+      for (const [name, repoPath] of entries) {
+        repos[name] = repoPath
+        console.log(`  Added: ${name}`)
+      }
+    } else if (answer) {
+      const indices = answer.split(',').map((s) => Number.parseInt(s.trim(), 10)).filter((n) => !Number.isNaN(n))
+      for (const idx of indices) {
+        if (idx >= 1 && idx <= entries.length) {
+          const [name, repoPath] = entries[idx - 1]
+          repos[name] = repoPath
+          console.log(`  Added: ${name}`)
+        }
+      }
+    }
+  } else {
+    console.log('  No new repos found.\n')
   }
 
-  // Let user add more
+  // Let user add more manually
   while (true) {
-    const input = await askAddMore()
+    const input = await ask('\nAdd a repo manually? (path or enter to skip): ')
     if (!input) break
     const resolved = path.resolve(expandHome(input))
     if (!isValidRepo(resolved)) {

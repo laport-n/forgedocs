@@ -1,6 +1,6 @@
-# Contributing to Docforge
+# Contributing to Forgedocs
 
-Thanks for your interest in contributing! Docforge is an open-source architecture documentation framework for codebases.
+Thanks for your interest in contributing! Forgedocs is an open-source architecture documentation framework for codebases.
 
 ## Getting Started
 

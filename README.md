@@ -1,4 +1,4 @@
-# Docforge
+# Forgedocs
 
 Architecture documentation framework for codebases. Auto-discovers repos, renders docs with VitePress, and maintains them with AI-assisted commands that keep documentation in sync with code.
 
@@ -36,7 +36,7 @@ This makes onboarding slow and AI agents lack context. When docs exist, nobody t
 
 ## The Approach: Progressive Disclosure
 
-Inspired by [matklad's ARCHITECTURE.md](https://matklad.github.io/2021/02/06/ARCHITECTURE.md.html) and [OpenAI's Harness Engineering](https://openai.com/index/harness-engineering/), Docforge uses **layered documentation** where agents and developers start with a narrow, stable entry point and follow pointers to deeper context.
+Inspired by [matklad's ARCHITECTURE.md](https://matklad.github.io/2021/02/06/ARCHITECTURE.md.html) and [OpenAI's Harness Engineering](https://openai.com/index/harness-engineering/), Forgedocs uses **layered documentation** where agents and developers start with a narrow, stable entry point and follow pointers to deeper context.
 
 ```
 CLAUDE.md          ← Table of contents. "Where to look", not "how to do everything". ~50 lines.
@@ -54,7 +54,7 @@ Each layer is progressively more detailed and less stable. The key: **don't docu
 
 ## How It Works
 
-Docforge doesn't contain documentation itself. It **auto-discovers** your local repos and creates symlinks to their docs, then renders everything as a unified site with VitePress.
+Forgedocs doesn't contain documentation itself. It **auto-discovers** your local repos and creates symlinks to their docs, then renders everything as a unified site with VitePress.
 
 ```
 forgedocs/                 ← this tool

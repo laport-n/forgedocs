@@ -2,7 +2,7 @@
 
 ## Scope
 
-Docforge is a local documentation viewer. It runs on your machine, reads local files via symlinks, and serves them on localhost. It does not:
+Forgedocs is a local documentation viewer. It runs on your machine, reads local files via symlinks, and serves them on localhost. It does not:
 - Accept external network connections (by default)
 - Store credentials or secrets
 - Make outbound API calls
@@ -28,5 +28,5 @@ We will respond within 7 days and provide a fix timeline.
 
 ### Out of scope
 - Vulnerabilities in VitePress itself (report upstream)
-- Security of the documented codebases (Docforge only reads `.md` files)
-- Local privilege escalation (Docforge runs with user permissions)
+- Security of the documented codebases (Forgedocs only reads `.md` files)
+- Local privilege escalation (Forgedocs runs with user permissions)

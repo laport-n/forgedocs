@@ -21,7 +21,7 @@ describe('config', () => {
       const config = await loadConfig(tempDir)
       expect(config.scanDirs).toBeDefined()
       expect(config.nestedDirs).toContain('services')
-      expect(config.title).toBe('Docforge')
+      expect(config.title).toBe('Forgedocs')
     })
 
     it('merges user config with defaults', async () => {

@@ -1,16 +1,15 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
 
 permissions:
-  contents: write
+  contents: read
   id-token: write
 
 jobs:
-  release:
+  publish:
     name: Publish to npm
     runs-on: ubuntu-latest
     environment: npm
@@ -26,10 +25,14 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm test
 
+      - name: Verify version matches tag
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::package.json version ($PKG_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+
       - name: Publish to npm
         run: npm publish --access public --provenance
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true

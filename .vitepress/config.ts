@@ -44,8 +44,19 @@ if (fs.existsSync(contentDir)) {
 // Build rewrites dynamically for each discovered service
 const rewrites: Record<string, string> = {}
 for (const s of services) {
-  rewrites[`content/${s}/README.md`] = `${s}/index.md`
-  rewrites[`content/${s}/ARCHITECTURE.md`] = `${s}/architecture.md`
+  const hasReadme = fs.existsSync(path.join(contentDir, s, 'README.md'))
+  const hasArch = fs.existsSync(path.join(contentDir, s, 'ARCHITECTURE.md'))
+
+  if (hasReadme) {
+    rewrites[`content/${s}/README.md`] = `${s}/index.md`
+  } else if (hasArch) {
+    // Fallback: use ARCHITECTURE.md as the home page when README is missing
+    rewrites[`content/${s}/ARCHITECTURE.md`] = `${s}/index.md`
+  }
+
+  if (hasReadme && hasArch) {
+    rewrites[`content/${s}/ARCHITECTURE.md`] = `${s}/architecture.md`
+  }
   rewrites[`content/${s}/docs/:file.md`] = `${s}/docs/:file.md`
   rewrites[`content/${s}/docs/adr/README.md`] = `${s}/docs/adr/index.md`
   rewrites[`content/${s}/docs/adr/:file.md`] = `${s}/docs/adr/:file.md`
@@ -87,8 +98,11 @@ function buildSidebar(service: string) {
   const items: DefaultTheme.SidebarItem[] = []
 
   // Main section
+  const hasReadme = fs.existsSync(path.join(serviceDir, 'README.md'))
+  const hasArch = fs.existsSync(path.join(serviceDir, 'ARCHITECTURE.md'))
   const mainItems: DefaultTheme.SidebarItem[] = [{ text: 'Home', link: `/${service}/` }]
-  if (fs.existsSync(path.join(serviceDir, 'ARCHITECTURE.md'))) {
+  // Only show separate Architecture link if README exists (otherwise ARCHITECTURE.md IS the home)
+  if (hasReadme && hasArch) {
     mainItems.push({ text: 'Architecture', link: `/${service}/architecture` })
   }
 

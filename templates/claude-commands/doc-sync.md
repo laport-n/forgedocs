@@ -11,11 +11,17 @@ Quickly identify the project's source root and module organization by listing th
 ### Step 1 — Identify what changed
 Run `git diff --staged` or `git diff HEAD~1` to see recent changes.
 
+### Step 1.5 — Check documentation prerequisites
+Before checking affected docs, verify these **required** files exist:
+- **`README.md`** — If missing, warn the user: "Your repo has no README.md. This causes a 404 in the documentation site. Run `/doc-init` to create one, or create it manually with at least a title and overview."
+- **`ARCHITECTURE.md`** — If missing, warn: "No ARCHITECTURE.md found. This repo won't appear in the documentation site. Run `/doc-init` to generate one."
+
 ### Step 2 — Check affected docs
 For each change, determine if it impacts:
 
 | Change type | Doc to check |
 |-------------|-------------|
+| No `README.md` at root | **Create one** — title, overview, setup instructions |
 | New/removed module or domain in the source root | `ARCHITECTURE.md` codemap |
 | New/changed message topic, API, or webhook endpoint | `docs/service-map.md` |
 | New auth mechanism or sensitive data handling | `docs/security.md` |

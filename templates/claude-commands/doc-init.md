@@ -1,6 +1,6 @@
 # /doc-init
 
-You are a documentation bootstrapper. Your job is to generate a complete documentation structure for the current repository, following the conventions expected by [docsite](https://github.com/nlaporte/docsite).
+You are a documentation bootstrapper. Your job is to generate a complete documentation structure for the current repository, following the conventions expected by [forgedocs](https://github.com/laport-n/forgedocs).
 
 ## Requirements
 
@@ -44,7 +44,26 @@ Explore the codebase thoroughly:
 
 Ask the user: "I've explored the codebase. Here's what I found: [summary]. Should I proceed with generating the documentation?"
 
-### Step 2 — Generate ARCHITECTURE.md
+### Step 2 — Create or improve README.md
+
+`README.md` is **required** — it's the home page of the service in the documentation site. Without it, the service gets a 404.
+
+**If README.md does not exist**, create it with:
+- **Title**: service name as `# heading`
+- **Overview**: 2-3 sentences explaining what this service does (from what you learned in Step 1)
+- **Setup**: how to install dependencies and run the project locally (from manifest file, Dockerfile, or config)
+- **Development**: how to run tests, linting, and other common dev commands
+- **Deployment**: brief deployment notes if visible from CI config, Dockerfile, or scripts
+- **Architecture**: a one-liner pointing to `ARCHITECTURE.md` for details
+
+**If README.md exists but is minimal** (less than 20 lines, or missing Setup/Development sections), improve it:
+- Add missing sections (Setup, Development, Deployment) by reading the manifest file and scripts
+- Don't remove existing content — only add what's missing
+- Ask the user before making changes: "Your README.md is missing [sections]. Should I add them?"
+
+**If README.md exists and is comprehensive**, leave it as-is.
+
+### Step 3 — Generate ARCHITECTURE.md
 
 Create `ARCHITECTURE.md` at the repo root following the matklad style. This file serves both humans and AI agents — it's loaded into the agent's context via CLAUDE.md, making the agent aware of system structure, invariants, and constraints:
 - **Overview**: What this service does, in 2-3 sentences
@@ -65,7 +84,7 @@ These checks will be executed automatically by `/doc-review`. If you cannot devi
 
 Keep it concise (~100-150 lines). This is a map, not a manual.
 
-### Step 3 — Generate CLAUDE.md
+### Step 4 — Generate CLAUDE.md
 
 Create `CLAUDE.md` at the repo root. This file is **read by AI coding agents at the start of every session** — it makes the agent smarter about this codebase. Navigation-first, not description-first:
 
@@ -96,7 +115,7 @@ Create `CLAUDE.md` at the repo root. This file is **read by AI coding agents at 
 - New complex feature → create `docs/features/<name>.md`
 ```
 
-### Step 4 — Generate docs/ directory
+### Step 5 — Generate docs/ directory
 
 Create the following files:
 
@@ -125,7 +144,7 @@ Create the following files:
 
 **`docs/adr/`** — Architecture Decision Records. ADRs document **what is in place now and what rules to follow**, not a history of how we got here. You must **investigate actively** to understand each decision deeply enough to write useful, practical ADRs.
 
-#### Step 4a — Detect and investigate decisions
+#### Step 5a — Detect and investigate decisions
 
 For each potential decision, **dig into the actual source** before writing anything:
 
@@ -148,11 +167,11 @@ For each potential decision, **dig into the actual source** before writing anyth
    - Check CI/CD config for unusual steps or custom tooling
    - Look at Dockerfile and docker-compose for service dependencies
 
-#### Step 4b — Ask the user when you can't access a source
+#### Step 5b — Ask the user when you can't access a source
 
 After investigating, compile a list of things you **couldn't access or understand from the code alone**. Present them to the user in a batch and wait for answers before writing the ADRs.
 
-#### Step 4c — Write ADRs
+#### Step 5c — Write ADRs
 
 ADRs are **practical reference documents**, not historical essays. Focus on what a developer needs to know *today*.
 
@@ -191,7 +210,7 @@ For each rule that can be verified automatically, add an HTML comment with a che
 - What breaks if you violate the rules above]
 ```
 
-### Step 5 — Install Claude Code commands
+### Step 6 — Install Claude Code commands
 
 Create `.claude/commands/` with 3 files copied from docsite templates:
 - `doc-feature.md` — creates feature documentation
@@ -200,7 +219,7 @@ Create `.claude/commands/` with 3 files copied from docsite templates:
 
 Also create `.claude/skills/doc-review/SKILL.md` for the automated review skill.
 
-### Step 6 — Update PR template
+### Step 7 — Update PR template
 
 If `.github/PULL_REQUEST_TEMPLATE.md` exists, add the documentation checklist:
 
@@ -214,7 +233,7 @@ If `.github/PULL_REQUEST_TEMPLATE.md` exists, add the documentation checklist:
 
 If it doesn't exist, create it with just this section.
 
-### Step 7 — Summary
+### Step 8 — Summary
 
 Show the user:
 1. All files created (with line counts)

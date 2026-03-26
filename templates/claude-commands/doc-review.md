@@ -10,11 +10,19 @@ Before auditing, identify the project's language, framework, and source director
 
 ### Step 1 — Inventory
 Read and list all documentation files:
+- `README.md`
 - `CLAUDE.md`
 - `ARCHITECTURE.md`
 - All files in `docs/`
 
 ### Step 2 — Check each doc
+
+**README.md:**
+- [ ] Exists at repo root (required — without it, the service shows a 404 in forgedocs)
+- [ ] Has a title (`# heading`)
+- [ ] Has setup/install instructions
+- [ ] Has development instructions (how to run tests, dev server)
+- If missing: flag as 🔴 **Critical** and offer to create one
 
 **CLAUDE.md:**
 - [ ] Points to docs, doesn't describe behavior

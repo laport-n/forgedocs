@@ -20,7 +20,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          registry-url: https://registry.npmjs.org
 
       - run: npm install --no-audit --no-fund
       - run: npm test
@@ -35,4 +34,4 @@ jobs:
           fi
 
       - name: Publish to npm
-        run: npm publish --access public --provenance
+        run: npm publish --provenance --access public

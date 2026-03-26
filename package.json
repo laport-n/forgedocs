@@ -1,20 +1,20 @@
 {
   "name": "forgedocs",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Architecture documentation framework for codebases. Auto-discovers repos, renders docs with VitePress, and maintains them with AI-assisted commands.",
   "type": "module",
   "license": "MIT",
   "author": "Nicolas Laporte",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nlaporte/docforge.git"
+    "url": "https://github.com/laport-n/forgedocs.git"
   },
-  "homepage": "https://github.com/nlaporte/docforge",
+  "homepage": "https://github.com/laport-n/forgedocs",
   "bugs": {
-    "url": "https://github.com/nlaporte/docforge/issues"
+    "url": "https://github.com/laport-n/forgedocs/issues"
   },
   "bin": {
-    "docforge": "bin/docforge.mjs"
+    "forgedocs": "bin/forgedocs.mjs"
   },
   "files": [
     "bin/",
@@ -56,6 +56,7 @@
     "format": "biome format --write ."
   },
   "dependencies": {
+    "forgedocs": "^0.3.3",
     "vitepress": "^1.6.3"
   },
   "devDependencies": {

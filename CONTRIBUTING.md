@@ -1,6 +1,6 @@
-# Contributing to Docforge
+# Contributing to Forgedocs
 
-Thanks for your interest in contributing! Docforge is an open-source architecture documentation framework for codebases.
+Thanks for your interest in contributing! Forgedocs is an open-source architecture documentation framework for codebases.
 
 ## Getting Started
 
@@ -12,8 +12,8 @@ Thanks for your interest in contributing! Docforge is an open-source architectur
 ### Development Setup
 
 ```bash
-git clone https://github.com/nlaporte/docforge.git
-cd docforge
+git clone https://github.com/laport-n/forgedocs.git
+cd forgedocs
 npm install
 
 # Create a test repo
@@ -21,8 +21,8 @@ mkdir -p /tmp/test-repo
 echo "# Test" > /tmp/test-repo/ARCHITECTURE.md
 echo "# Test" > /tmp/test-repo/README.md
 
-npx docforge add /tmp/test-repo
-npx docforge dev
+npx forgedocs add /tmp/test-repo
+npx forgedocs dev
 # Open http://localhost:5173
 ```
 
@@ -39,11 +39,11 @@ npm run lint:fix        # auto-fix lint issues
 
 ### Reporting Bugs
 
-Open a [GitHub Issue](https://github.com/nlaporte/docforge/issues/new?template=bug_report.yml) with steps to reproduce, expected vs actual behavior, and your environment (OS, Node.js version).
+Open a [GitHub Issue](https://github.com/laport-n/forgedocs/issues/new?template=bug_report.yml) with steps to reproduce, expected vs actual behavior, and your environment (OS, Node.js version).
 
 ### Suggesting Features
 
-Open a [GitHub Issue](https://github.com/nlaporte/docforge/issues/new?template=feature_request.yml) describing the problem and your proposed solution.
+Open a [GitHub Issue](https://github.com/laport-n/forgedocs/issues/new?template=feature_request.yml) describing the problem and your proposed solution.
 
 ### Submitting Code
 
@@ -62,9 +62,9 @@ Open a [GitHub Issue](https://github.com/nlaporte/docforge/issues/new?template=f
 ## Architecture
 
 ```
-docforge/
+forgedocs/
 ├── bin/
-│   └── docforge.mjs         ← CLI entry point (docforge init, dev, install, etc.)
+│   └── forgedocs.mjs         ← CLI entry point (forgedocs init, dev, install, etc.)
 ├── lib/
 │   ├── config.mjs            ← Configuration loading and validation
 │   ├── discovery.mjs          ← Repository scanning and detection

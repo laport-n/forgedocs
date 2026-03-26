@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug in Docforge
+description: Report a bug in Forgedocs
 labels: [bug]
 body:
   - type: markdown
@@ -21,7 +21,7 @@ body:
       label: Steps to reproduce
       description: How can we reproduce this issue?
       placeholder: |
-        1. Run `docforge dev`
+        1. Run `forgedocs dev`
         2. ...
     validations:
       required: true

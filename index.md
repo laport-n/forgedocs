@@ -2,16 +2,16 @@
 layout: home
 
 hero:
-  name: Docforge
+  name: Forgedocs
   text: Architecture Documentation That Stays Accurate
   tagline: Auto-discovered from your repos. Verified by invariant checks. Maintained by AI-assisted commands.
   actions:
     - theme: brand
       text: Get Started
-      link: https://github.com/nlaporte/docforge#quick-start
+      link: https://github.com/laport-n/forgedocs#quick-start
     - theme: alt
       text: View on GitHub
-      link: https://github.com/nlaporte/docforge
+      link: https://github.com/laport-n/forgedocs
 
 features:
   - title: Verifiable Invariants
@@ -28,14 +28,14 @@ features:
 
 ```bash
 npm install -g forgedocs
-docforge init        # discover repos
-docforge dev         # start the doc server
+forgedocs init        # discover repos
+forgedocs dev         # start the doc server
 ```
 
 Or bootstrap a new repo's documentation:
 
 ```bash
-docforge install ~/path/to/your-repo   # install Claude Code commands
+forgedocs install ~/path/to/your-repo   # install Claude Code commands
 cd ~/path/to/your-repo
 claude                                   # open Claude Code
 # Type: /doc-init                        # generate everything
@@ -88,18 +88,19 @@ The sidebar is generated automatically from whatever files exist — no manual c
 
 | Command | Description |
 |---------|-------------|
-| `docforge init` | Interactive setup — discover repos, create symlinks |
-| `docforge dev` | Start the documentation dev server |
-| `docforge build` | Build static site |
-| `docforge add <path>` | Add a specific repo |
-| `docforge remove <name>` | Remove a repo |
-| `docforge status` | Show tracked repos and their doc coverage |
-| `docforge install <path>` | Install Claude Code commands into a repo |
-| `docforge doctor` | Diagnose common issues |
+| `forgedocs init` | Interactive setup — discover repos, create symlinks |
+| `forgedocs dev` | Start the documentation dev server |
+| `forgedocs build` | Build static site |
+| `forgedocs add <path>` | Add a specific repo |
+| `forgedocs remove <name>` | Remove a repo |
+| `forgedocs status` | Show tracked repos and their doc coverage |
+| `forgedocs install <path>` | Install Claude Code commands into a repo |
+| `forgedocs doctor` | Diagnose common issues |
+| `forgedocs help` | Show help and list all commands |
 
 ## Claude Code Commands
 
-Installed into your repo via `docforge install` — available in any Claude Code session.
+Installed into your repo via `forgedocs install` — available in any Claude Code session.
 
 | Command | What it does | When to use |
 |---------|-------------|-------------|

@@ -4,22 +4,25 @@ import fs from 'node:fs'
 import path from 'node:path'
 import readline from 'node:readline'
 import { loadConfig, loadReposConfig, saveReposConfig } from '../lib/config.mjs'
-import { isValidRepo, scanForRepos } from '../lib/discovery.mjs'
+import { detectScanDirs, isValidRepo, scanForRepos } from '../lib/discovery.mjs'
 import { installTemplates } from '../lib/installer.mjs'
 import { linkRepos } from '../lib/linker.mjs'
 import { expandHome } from '../lib/utils.mjs'
 
-const ROOT = path.dirname(path.dirname(new URL(import.meta.url).pathname))
-const CONFIG_PATH = path.join(ROOT, '.repos.json')
-const CONTENT_DIR = path.join(ROOT, 'content')
-const TEMPLATES_DIR = path.join(ROOT, 'templates')
+// PKG_ROOT = where forgedocs is installed (templates, vitepress config, node_modules)
+// CWD = where the user runs the command (repos.json, content/, docsite.config.mjs)
+const PKG_ROOT = path.dirname(path.dirname(new URL(import.meta.url).pathname))
+const CWD = process.cwd()
+const CONFIG_PATH = path.join(CWD, '.repos.json')
+const CONTENT_DIR = path.join(CWD, 'content')
+const TEMPLATES_DIR = path.join(PKG_ROOT, 'templates')
 
-const VERSION = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf-8')).version
+const VERSION = JSON.parse(fs.readFileSync(path.join(PKG_ROOT, 'package.json'), 'utf-8')).version
 
 const HELP = `
-docforge v${VERSION} — Architecture documentation framework
+forgedocs v${VERSION} — Architecture documentation framework
 
-Usage: docforge <command> [options]
+Usage: forgedocs <command> [options]
 
 Commands:
   init                     Interactive setup — discover and link repos
@@ -31,6 +34,7 @@ Commands:
   status                   Show status of all tracked repos
   install <path> [--force] Install Claude Code commands into a repo
   doctor                   Diagnose common issues
+  help                     Show this help
 
 Options:
   --verbose, -v            Show detailed debug output
@@ -42,20 +46,38 @@ const command = process.argv[2]
 const args = process.argv.slice(3)
 const hasFlag = (flag) => args.includes(flag)
 
-async function askAddMore() {
+function ask(question) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
   return new Promise((resolve) => {
-    rl.question('Add a repo manually? (path or empty to skip): ', (answer) => {
+    rl.question(question, (answer) => {
       rl.close()
       resolve(answer.trim())
     })
   })
 }
 
-async function cmdInit() {
-  const config = await loadConfig(ROOT)
+/** Ensure VitePress config and index.md exist in CWD (copy from package if needed) */
+function ensureVitepressFiles() {
+  const configDest = path.join(CWD, '.vitepress', 'config.ts')
+  if (!fs.existsSync(configDest)) {
+    fs.mkdirSync(path.join(CWD, '.vitepress'), { recursive: true })
+    fs.copyFileSync(path.join(PKG_ROOT, '.vitepress', 'config.ts'), configDest)
+  }
+  const indexDest = path.join(CWD, 'index.md')
+  if (!fs.existsSync(indexDest)) {
+    fs.copyFileSync(path.join(PKG_ROOT, 'index.md'), indexDest)
+  }
+  const configMjsDest = path.join(CWD, 'docsite.config.mjs')
+  if (!fs.existsSync(configMjsDest)) {
+    fs.copyFileSync(path.join(PKG_ROOT, 'docsite.config.mjs'), configMjsDest)
+  }
+}
 
-  console.log('\nDocforge Setup\n')
+async function cmdInit() {
+  const config = await loadConfig(CWD)
+  const homeDir = (await import('node:os')).default.homedir()
+
+  console.log('\nForgedocs Setup\n')
 
   const repos = loadReposConfig(CONFIG_PATH) || {}
 
@@ -69,28 +91,62 @@ async function cmdInit() {
     }
   }
 
-  // Build search directories
-  const searchDirs = [path.resolve(ROOT, '..'), ...config.scanDirs.map((d) => expandHome(d))]
+  // Build search directories: configured + auto-detected
+  const configuredDirs = config.scanDirs.map((d) => expandHome(d))
+  const detectedDirs = detectScanDirs(homeDir)
+  const allDirs = new Set([path.resolve(CWD, '..'), ...configuredDirs, ...detectedDirs])
 
   // Auto-detect new repos
-  console.log('\nScanning for repositories...\n')
-  for (const searchDir of searchDirs) {
+  console.log('Scanning for repositories...\n')
+  const discovered = {}
+  for (const searchDir of allDirs) {
     const found = scanForRepos(searchDir, config.nestedDirs)
     for (const [name, repoPath] of Object.entries(found)) {
       if (!repos[name]) {
-        repos[name] = repoPath
-        console.log(`  Found: ${name} -> ${repoPath}`)
+        discovered[name] = repoPath
       }
     }
   }
 
-  if (Object.keys(repos).length === 0) {
-    console.log('  No repos found automatically.\n')
+  // Interactive selection
+  if (Object.keys(discovered).length > 0) {
+    console.log(`Found ${Object.keys(discovered).length} new repo(s):\n`)
+    const entries = Object.entries(discovered).sort(([a], [b]) => a.localeCompare(b))
+
+    for (let i = 0; i < entries.length; i++) {
+      const [name, repoPath] = entries[i]
+      console.log(`  [${i + 1}] ${name}`)
+      console.log(`      ${repoPath}`)
+    }
+
+    console.log()
+    const answer = await ask('Which repos to add? (a=all, comma-separated numbers, or enter to skip): ')
+
+    if (answer.toLowerCase() === 'a' || answer.toLowerCase() === 'all') {
+      for (const [name, repoPath] of entries) {
+        repos[name] = repoPath
+        console.log(`  Added: ${name}`)
+      }
+    } else if (answer) {
+      const indices = answer
+        .split(',')
+        .map((s) => Number.parseInt(s.trim(), 10))
+        .filter((n) => !Number.isNaN(n))
+      for (const idx of indices) {
+        if (idx >= 1 && idx <= entries.length) {
+          const [name, repoPath] = entries[idx - 1]
+          repos[name] = repoPath
+          console.log(`  Added: ${name}`)
+        }
+      }
+    }
+  } else {
+    console.log('  No new repos found.\n')
   }
 
-  // Let user add more
+  // Let user add more manually
   while (true) {
-    const input = await askAddMore()
+    const input = await ask('\nAdd a repo manually? (path or enter to skip): ')
     if (!input) break
     const resolved = path.resolve(expandHome(input))
     if (!isValidRepo(resolved)) {
@@ -106,32 +162,36 @@ async function cmdInit() {
   console.log(`\nConfig saved (${Object.keys(repos).length} repos)`)
 
   console.log('\nCreating links\n')
-  linkRepos(repos, CONTENT_DIR, ROOT)
+  linkRepos(repos, CONTENT_DIR, CWD)
 
-  console.log('\nSetup complete! Run: docforge dev\n')
+  ensureVitepressFiles()
+
+  console.log('\nSetup complete! Run: forgedocs dev\n')
 }
 
 async function cmdDev() {
   await ensureSetup()
+  ensureVitepressFiles()
   const { execFileSync } = await import('node:child_process')
-  execFileSync('npx', ['vitepress', 'dev'], { cwd: ROOT, stdio: 'inherit' })
+  execFileSync('npx', ['vitepress', 'dev'], { cwd: CWD, stdio: 'inherit' })
 }
 
 async function cmdBuild() {
   await ensureSetup()
+  ensureVitepressFiles()
   const { execFileSync } = await import('node:child_process')
-  execFileSync('npx', ['vitepress', 'build'], { cwd: ROOT, stdio: 'inherit' })
+  execFileSync('npx', ['vitepress', 'build'], { cwd: CWD, stdio: 'inherit' })
 }
 
 async function cmdPreview() {
   const { execFileSync } = await import('node:child_process')
-  execFileSync('npx', ['vitepress', 'preview'], { cwd: ROOT, stdio: 'inherit' })
+  execFileSync('npx', ['vitepress', 'preview'], { cwd: CWD, stdio: 'inherit' })
 }
 
 function cmdAdd() {
   const targetPath = args.find((a) => !a.startsWith('-'))
   if (!targetPath) {
-    console.error('Usage: docforge add <path>')
+    console.error('Usage: forgedocs add <path>')
     process.exit(1)
   }
 
@@ -146,18 +206,18 @@ function cmdAdd() {
   repos[name] = resolved
   saveReposConfig(CONFIG_PATH, repos)
   console.log(`Added ${name} -> ${resolved}`)
-  linkRepos(repos, CONTENT_DIR, ROOT)
+  linkRepos(repos, CONTENT_DIR, CWD)
 }
 
 function cmdRemove() {
   const repoName = args.find((a) => !a.startsWith('-'))
   if (!repoName) {
-    console.error('Usage: docforge remove <name>')
+    console.error('Usage: forgedocs remove <name>')
     process.exit(1)
   }
 
   const repos = loadReposConfig(CONFIG_PATH)
-  if (!repos || !repos[repoName]) {
+  if (!repos?.hasOwnProperty(repoName)) {
     console.error(`Repo "${repoName}" not found in config.`)
     const available = repos ? Object.keys(repos) : []
     if (available.length > 0) {
@@ -169,13 +229,13 @@ function cmdRemove() {
   delete repos[repoName]
   saveReposConfig(CONFIG_PATH, repos)
   console.log(`Removed "${repoName}" from config.`)
-  linkRepos(repos, CONTENT_DIR, ROOT)
+  linkRepos(repos, CONTENT_DIR, CWD)
 }
 
 function cmdStatus() {
   const repos = loadReposConfig(CONFIG_PATH)
   if (!repos || Object.keys(repos).length === 0) {
-    console.log('No repos configured. Run: docforge init')
+    console.log('No repos configured. Run: forgedocs init')
     return
   }
 
@@ -210,7 +270,7 @@ function cmdStatus() {
       }
       if (features.length > 0) console.log(`     Docs: ${features.join(', ')}`)
     }
-    if (!linkOk) console.log('     Link: broken (run docforge init)')
+    if (!linkOk) console.log('     Link: broken (run forgedocs init)')
     console.log()
   }
 }
@@ -218,7 +278,7 @@ function cmdStatus() {
 function cmdInstall() {
   const targetPath = args.find((a) => !a.startsWith('-'))
   if (!targetPath) {
-    console.error('Usage: docforge install <path> [--force]')
+    console.error('Usage: forgedocs install <path> [--force]')
     process.exit(1)
   }
 
@@ -237,7 +297,7 @@ function cmdInstall() {
 
   const { installed, updated, skipped } = installTemplates(TEMPLATES_DIR, targetRepo, { force })
 
-  console.log(`\nDocforge — ${path.basename(targetRepo)}\n`)
+  console.log(`\nForgedocs — ${path.basename(targetRepo)}\n`)
 
   if (installed.length > 0) {
     console.log('Installed:')
@@ -268,13 +328,13 @@ Next steps:
 }
 
 function cmdDoctor() {
-  console.log('\nDocforge Doctor\n')
+  console.log('\nForgedocs Doctor\n')
   let issues = 0
 
   // Check Node.js version
   const nodeVersion = process.versions.node.split('.').map(Number)
-  if (nodeVersion[0] < 18) {
-    console.log(`  \u274C Node.js ${process.versions.node} — requires >= 18.0.0`)
+  if (nodeVersion[0] < 20) {
+    console.log(`  \u274C Node.js ${process.versions.node} — requires >= 20.0.0`)
     issues++
   } else {
     console.log(`  \u2705 Node.js ${process.versions.node}`)
@@ -284,7 +344,7 @@ function cmdDoctor() {
   try {
     const repos = loadReposConfig(CONFIG_PATH)
     if (!repos) {
-      console.log('  \u26A0\uFE0F  No .repos.json found — run: docforge init')
+      console.log('  \u26A0\uFE0F  No .repos.json found — run: forgedocs init')
       issues++
     } else {
       const count = Object.keys(repos).length
@@ -303,7 +363,7 @@ function cmdDoctor() {
         }
       }
       if (brokenCount === 0) {
-        console.log(`  \u2705 All repo paths valid`)
+        console.log('  \u2705 All repo paths valid')
       }
     }
   } catch (err) {
@@ -313,7 +373,7 @@ function cmdDoctor() {
 
   // Check content/ directory
   if (!fs.existsSync(CONTENT_DIR)) {
-    console.log('  \u26A0\uFE0F  content/ directory missing — run: docforge init')
+    console.log('  \u26A0\uFE0F  content/ directory missing — run: forgedocs init')
     issues++
   } else {
     const links = fs.readdirSync(CONTENT_DIR)
@@ -327,7 +387,7 @@ function cmdDoctor() {
       }
     }
     if (brokenLinks > 0) {
-      console.log(`  \u26A0\uFE0F  ${brokenLinks} broken symlink(s) in content/ — run: docforge init`)
+      console.log(`  \u26A0\uFE0F  ${brokenLinks} broken symlink(s) in content/ — run: forgedocs init`)
       issues++
     } else {
       console.log(`  \u2705 content/ (${links.length} linked repos)`)
@@ -335,7 +395,7 @@ function cmdDoctor() {
   }
 
   // Check VitePress
-  const vitepressPath = path.join(ROOT, 'node_modules', 'vitepress')
+  const vitepressPath = path.join(PKG_ROOT, 'node_modules', 'vitepress')
   if (!fs.existsSync(vitepressPath)) {
     console.log('  \u274C VitePress not installed — run: npm install')
     issues++
@@ -344,7 +404,7 @@ function cmdDoctor() {
   }
 
   // Check docsite.config.mjs
-  const configExists = fs.existsSync(path.join(ROOT, 'docsite.config.mjs'))
+  const configExists = fs.existsSync(path.join(CWD, 'docsite.config.mjs'))
   console.log(
     `  ${configExists ? '\u2705' : '\u26A0\uFE0F'} docsite.config.mjs ${configExists ? 'found' : 'not found (using defaults)'}`,
   )
@@ -360,7 +420,7 @@ function cmdDoctor() {
 async function ensureSetup() {
   const repos = loadReposConfig(CONFIG_PATH)
   if (!repos) {
-    console.log('No repos configured. Run: docforge init\n')
+    console.log('No repos configured. Run: forgedocs init\n')
     process.exit(1)
   }
   let needsRefresh = !fs.existsSync(CONTENT_DIR)
@@ -374,12 +434,12 @@ async function ensureSetup() {
   }
   if (needsRefresh) {
     console.log('Refreshing links...')
-    linkRepos(repos, CONTENT_DIR, ROOT)
+    linkRepos(repos, CONTENT_DIR, CWD)
   }
 }
 
 async function main() {
-  if (!command || command === '--help' || command === '-h') {
+  if (!command || command === 'help' || command === '--help' || command === '-h') {
     console.log(HELP)
     process.exit(0)
   }

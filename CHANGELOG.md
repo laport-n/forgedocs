@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.0] — 2026-03-26
+
+### Added
+- **`forgedocs quickstart`** — Bootstrap documentation in any repo in 30 seconds. Auto-detects tech stack, generates ARCHITECTURE.md scaffold from filesystem, creates docs/ structure, installs Claude commands. Supports `--preset` flag for stack-specific scaffolding.
+- **Stack presets** (9 stacks) — `nextjs`, `react`, `fastapi`, `django`, `express`, `nestjs`, `rails`, `go`, `rust`. Each generates stack-appropriate codemap entries and data flow diagrams. Auto-detected from package.json, Cargo.toml, go.mod, Gemfile, etc.
+- **`forgedocs score`** — Doc health score (0–100) per repo with detailed breakdown by category (Structure, Quality, Depth). Supports `--json` for CI integration.
+- **`forgedocs badge`** — Generate SVG doc health badges for READMEs. Color-coded (green/yellow/orange/red). Output to file with `--output`.
+- **`forgedocs diff`** — Drift detection without AI. Parses ARCHITECTURE.md codemap, compares with actual filesystem. Reports new directories, removed modules, undocumented entries, and lists invariants to verify. Supports `--json`.
+- **`forgedocs export`** — Export docs as JSON (`forgedocs export json`) or self-contained HTML (`forgedocs export html <path>`). HTML export includes inline CSS, table of contents, and print-friendly styles.
+- **`forgedocs watch`** — File watcher daemon that monitors tracked repos for changes (new directories, config file changes, doc modifications). Real-time terminal notifications with debouncing.
+- **Plugin system** (`lib/plugins.mjs`) — Lightweight plugin API for extending Forgedocs. Plugins can add pages, sidebar items, and hook into discovery/build. Supports npm packages, local files, and `[name, options]` tuple config.
+- **VS Code extension** (`extensions/vscode/`) — Status bar health score, sidebar documentation browser (features, ADRs, glossary), drift detection warnings, quick navigation commands. Auto-activates on `ARCHITECTURE.md` presence.
+- **`plugins` config option** in `docsite.config.mjs` — Array of plugin specifiers (npm packages, local paths, or `[name, options]` tuples).
+
+### Changed
+- CLI help text updated with all new commands and options
+- `--json` flag now supported on `score` and `diff` commands in addition to `status` and `doctor`
+
 ## [0.5.0] — 2026-03-26
 
 ### Added

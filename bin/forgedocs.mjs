@@ -27,26 +27,41 @@ Usage: forgedocs <command> [options]
 
 Commands:
   init                     Interactive setup — discover and link repos
-  mcp                      Start MCP server (for Claude Code integration)
+  quickstart [path]        Bootstrap docs in a repo (detect stack, scaffold, install commands)
   dev                      Start the documentation dev server
   build                    Build static documentation site
   preview                  Preview the built site
   add <path>               Add a specific repo by path
   remove <name>            Remove a repo from the documentation site
   status                   Show status of all tracked repos
+  score [path]             Show doc health score for a repo or all tracked repos
+  badge [path]             Generate SVG doc health badge
+  diff [path]              Detect documentation drift (codemap vs filesystem)
+  export <format> [path]   Export docs (formats: json, html)
+  watch                    Watch tracked repos for changes that need doc updates
   install <path> [--force] Install Claude Code commands into a repo
   doctor                   Diagnose common issues
+  mcp                      Start MCP server (for Claude Code integration)
   help                     Show this help
 
 Options:
   --verbose, -v            Show detailed debug output
   --help, -h               Show this help
   --version                Show version
+  --json                   Machine-readable output (on status, score, doctor, diff)
+  --preset <name>          Stack preset for quickstart (nextjs, react, fastapi, django, express, nestjs, rails, go, rust)
+  --force                  Overwrite existing files
+  --output, -o <file>      Output file path (for badge, export)
 `
 
 const command = process.argv[2]
 const args = process.argv.slice(3)
 const hasFlag = (flag) => args.includes(flag)
+const getFlagValue = (flag) => {
+  const idx = args.indexOf(flag)
+  return idx !== -1 && idx + 1 < args.length ? args[idx + 1] : null
+}
+const getPositionalArg = () => args.find((a) => !a.startsWith('-'))
 
 function ask(question) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
@@ -171,6 +186,62 @@ async function cmdInit() {
   console.log('\nSetup complete! Run: forgedocs dev\n')
 }
 
+async function cmdQuickstart() {
+  const { quickstart, listPresets } = await import('../lib/quickstart.mjs')
+
+  const targetPath = getPositionalArg() || CWD
+  const targetDir = path.resolve(expandHome(targetPath))
+  const preset = getFlagValue('--preset')
+  const force = hasFlag('--force')
+
+  if (!fs.existsSync(targetDir)) {
+    console.error(`Directory not found: ${targetDir}`)
+    process.exit(1)
+  }
+
+  console.log(`\nForgedocs Quickstart\n`)
+  console.log(`  Target: ${targetDir}`)
+
+  if (preset) {
+    const valid = listPresets().map((p) => p.key)
+    if (!valid.includes(preset)) {
+      console.error(`  Unknown preset: ${preset}`)
+      console.error(`  Available: ${valid.join(', ')}`)
+      process.exit(1)
+    }
+  }
+
+  const result = quickstart(targetDir, TEMPLATES_DIR, { preset, force })
+
+  if (result.preset) {
+    console.log(`  Detected: ${result.preset}`)
+  }
+  console.log()
+
+  if (result.created.length > 0) {
+    console.log('  Created:')
+    for (const f of result.created) console.log(`    + ${f}`)
+  }
+
+  if (result.commandsInstalled.length > 0) {
+    console.log('\n  Claude commands installed:')
+    for (const f of result.commandsInstalled) console.log(`    + ${f}`)
+  }
+
+  if (result.skipped.length > 0) {
+    console.log('\n  Skipped (already exists):')
+    for (const f of result.skipped) console.log(`    - ${f}`)
+  }
+
+  console.log(`
+Next steps:
+  1. Edit ARCHITECTURE.md — fill in the [To be documented] sections
+  2. Run: forgedocs add ${targetDir}
+  3. Run: forgedocs dev
+  Or open Claude Code and run /doc-init for AI-assisted generation.
+`)
+}
+
 async function cmdDev() {
   await ensureSetup()
   ensureVitepressFiles()
@@ -191,7 +262,7 @@ async function cmdPreview() {
 }
 
 function cmdAdd() {
-  const targetPath = args.find((a) => !a.startsWith('-'))
+  const targetPath = getPositionalArg()
   if (!targetPath) {
     console.error('Usage: forgedocs add <path>')
     process.exit(1)
@@ -213,7 +284,7 @@ function cmdAdd() {
 }
 
 function cmdRemove() {
-  const repoName = args.find((a) => !a.startsWith('-'))
+  const repoName = getPositionalArg()
   if (!repoName) {
     console.error('Usage: forgedocs remove <name>')
     process.exit(1)
@@ -300,8 +371,227 @@ function cmdStatus() {
   }
 }
 
+async function cmdScore() {
+  const { calculateHealth, formatHealthReport } = await import('../lib/health.mjs')
+  const jsonOutput = hasFlag('--json')
+  const targetPath = getPositionalArg()
+
+  if (targetPath) {
+    // Score a single repo
+    const resolved = path.resolve(expandHome(targetPath))
+    if (!fs.existsSync(resolved)) {
+      console.error(`Directory not found: ${resolved}`)
+      process.exit(1)
+    }
+    const health = calculateHealth(resolved)
+    if (jsonOutput) {
+      console.log(JSON.stringify({ name: path.basename(resolved), ...health }, null, 2))
+    } else {
+      console.log(`\n${formatHealthReport(path.basename(resolved), health)}`)
+    }
+    return
+  }
+
+  // Score all tracked repos
+  const repos = loadReposConfig(CONFIG_PATH)
+  if (!repos || Object.keys(repos).length === 0) {
+    console.log('No repos configured. Run: forgedocs init')
+    return
+  }
+
+  const results = {}
+  let totalScore = 0
+  let totalMax = 0
+
+  for (const [name, repoPath] of Object.entries(repos)) {
+    if (!fs.existsSync(repoPath)) continue
+    const health = calculateHealth(repoPath)
+    results[name] = health
+    totalScore += health.score
+    totalMax += health.maxScore
+  }
+
+  if (jsonOutput) {
+    console.log(JSON.stringify({ repos: results, totalScore, totalMax }, null, 2))
+    return
+  }
+
+  for (const [name, health] of Object.entries(results)) {
+    console.log(`\n${formatHealthReport(name, health)}`)
+  }
+
+  if (Object.keys(results).length > 1) {
+    const avgPct = Math.round((totalScore / totalMax) * 100)
+    console.log(`\nOverall: ${totalScore}/${totalMax} (${avgPct}%)\n`)
+  }
+}
+
+async function cmdBadge() {
+  const { calculateHealth, generateBadge } = await import('../lib/health.mjs')
+
+  const targetPath = getPositionalArg() || CWD
+  const resolved = path.resolve(expandHome(targetPath))
+  const outputPath = getFlagValue('--output') || getFlagValue('-o')
+
+  if (!fs.existsSync(resolved)) {
+    console.error(`Directory not found: ${resolved}`)
+    process.exit(1)
+  }
+
+  const health = calculateHealth(resolved)
+  const svg = generateBadge(health.score, health.maxScore)
+
+  if (outputPath) {
+    fs.writeFileSync(outputPath, svg)
+    console.log(`Badge written to ${outputPath}`)
+  } else {
+    console.log(svg)
+  }
+}
+
+async function cmdDiff() {
+  const { detectDrift, formatDriftReport } = await import('../lib/diff.mjs')
+  const jsonOutput = hasFlag('--json')
+  const targetPath = getPositionalArg()
+
+  if (targetPath) {
+    const resolved = path.resolve(expandHome(targetPath))
+    if (!fs.existsSync(resolved)) {
+      console.error(`Directory not found: ${resolved}`)
+      process.exit(1)
+    }
+    const drift = detectDrift(resolved)
+    if (jsonOutput) {
+      console.log(JSON.stringify(drift, null, 2))
+    } else {
+      console.log(formatDriftReport(resolved, drift))
+    }
+    return
+  }
+
+  // Diff all tracked repos
+  const repos = loadReposConfig(CONFIG_PATH)
+  if (!repos || Object.keys(repos).length === 0) {
+    console.log('No repos configured. Run: forgedocs init')
+    return
+  }
+
+  const allResults = {}
+  for (const [name, repoPath] of Object.entries(repos)) {
+    if (!fs.existsSync(repoPath)) continue
+    try {
+      const drift = detectDrift(repoPath)
+      allResults[name] = drift
+      if (!jsonOutput) {
+        console.log(formatDriftReport(repoPath, drift))
+      }
+    } catch (err) {
+      if (!jsonOutput) {
+        console.log(`\n${name}: ${err.message}\n`)
+      }
+      allResults[name] = { error: err.message }
+    }
+  }
+
+  if (jsonOutput) {
+    console.log(JSON.stringify({ repos: allResults }, null, 2))
+  }
+}
+
+async function cmdExport() {
+  const format = getPositionalArg()
+  if (!format || !['json', 'html'].includes(format)) {
+    console.error('Usage: forgedocs export <json|html> [path]')
+    console.error('  forgedocs export json              Export all tracked repos as JSON')
+    console.error('  forgedocs export json ~/my-repo    Export a single repo as JSON')
+    console.error('  forgedocs export html ~/my-repo    Export a single repo as self-contained HTML')
+    process.exit(1)
+  }
+
+  const { exportJson, exportAllJson, exportHtml } = await import('../lib/export.mjs')
+  const outputPath = getFlagValue('--output') || getFlagValue('-o')
+
+  // Find the second positional arg (after format)
+  const pathArg = args.find(
+    (a, i) => !a.startsWith('-') && a !== format && (i === 0 || !args[i - 1].match(/^--(output|preset)$/)),
+  )
+
+  if (format === 'json') {
+    let result
+    if (pathArg) {
+      const resolved = path.resolve(expandHome(pathArg))
+      if (!fs.existsSync(resolved)) {
+        console.error(`Directory not found: ${resolved}`)
+        process.exit(1)
+      }
+      result = exportJson(resolved)
+    } else {
+      const repos = loadReposConfig(CONFIG_PATH)
+      if (!repos || Object.keys(repos).length === 0) {
+        console.error('No repos configured. Run: forgedocs init')
+        process.exit(1)
+      }
+      result = exportAllJson(repos)
+    }
+
+    const json = JSON.stringify(result, null, 2)
+    if (outputPath) {
+      fs.writeFileSync(outputPath, json)
+      console.log(`Exported to ${outputPath}`)
+    } else {
+      console.log(json)
+    }
+  }
+
+  if (format === 'html') {
+    if (!pathArg) {
+      console.error('Usage: forgedocs export html <path> [-o output.html]')
+      process.exit(1)
+    }
+    const resolved = path.resolve(expandHome(pathArg))
+    if (!fs.existsSync(resolved)) {
+      console.error(`Directory not found: ${resolved}`)
+      process.exit(1)
+    }
+
+    const html = exportHtml(resolved)
+    const out = outputPath || `${path.basename(resolved)}-docs.html`
+    fs.writeFileSync(out, html)
+    console.log(`Exported to ${out}`)
+  }
+}
+
+async function cmdWatch() {
+  const { watchRepos, formatWatchEvent } = await import('../lib/watch.mjs')
+
+  const repos = loadReposConfig(CONFIG_PATH)
+  if (!repos || Object.keys(repos).length === 0) {
+    console.log('No repos configured. Run: forgedocs init')
+    process.exit(1)
+  }
+
+  console.log('\nForgedocs Watch\n')
+  console.log(`  Watching ${Object.keys(repos).length} repo(s) for changes...\n`)
+  console.log('  Press Ctrl+C to stop.\n')
+
+  const watcher = watchRepos(repos, {
+    onEvent(event) {
+      console.log(formatWatchEvent(event))
+    },
+  })
+
+  console.log(`  ${watcher.watcherCount} watcher(s) active.\n`)
+
+  // Keep the process alive
+  process.on('SIGINT', () => {
+    console.log('\n  Stopped watching.')
+    watcher.stop()
+    process.exit(0)
+  })
+}
+
 function cmdInstall() {
-  const targetPath = args.find((a) => !a.startsWith('-'))
+  const targetPath = getPositionalArg()
   if (!targetPath) {
     console.error('Usage: forgedocs install <path> [--force]')
     process.exit(1)
@@ -486,6 +776,8 @@ async function main() {
   switch (command) {
     case 'init':
       return cmdInit()
+    case 'quickstart':
+      return cmdQuickstart()
     case 'dev':
       return cmdDev()
     case 'build':
@@ -498,6 +790,16 @@ async function main() {
       return cmdRemove()
     case 'status':
       return cmdStatus()
+    case 'score':
+      return cmdScore()
+    case 'badge':
+      return cmdBadge()
+    case 'diff':
+      return cmdDiff()
+    case 'export':
+      return cmdExport()
+    case 'watch':
+      return cmdWatch()
     case 'install':
       return cmdInstall()
     case 'doctor':

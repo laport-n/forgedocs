@@ -13,11 +13,19 @@ Built for developers who want docs they can trust, and AI agents that actually u
 ## Try it in 30 seconds
 
 ```bash
-npx forgedocs init       # discovers your repos automatically
-npx forgedocs dev        # starts the doc site
+cd ~/my-project
+npx forgedocs quickstart  # detects stack, scaffolds docs, installs AI commands
+npx forgedocs dev         # starts the doc site
 ```
 
 Open [localhost:5173](http://localhost:5173) — your architecture docs are live.
+
+Or for multi-repo setups:
+
+```bash
+npx forgedocs init       # discovers all your repos automatically
+npx forgedocs dev        # unified doc site across all repos
+```
 
 ## The problem
 
@@ -42,6 +50,16 @@ Docs exist in wikis, but they drifted months ago. AI agents hallucinate because 
 **MCP server for Claude** — Claude queries your docs mid-task: search across repos, read any doc, check freshness. Your doc site becomes an active knowledge base.
 
 **CI freshness checks** — A GitHub Action warns on PRs when code changes need doc updates. No stale docs slipping through.
+
+**Doc Health Score** — A score out of 100 that measures documentation completeness. Generate SVG badges for your README, track progress over time, and set CI thresholds.
+
+**Drift Detection** — `forgedocs diff` compares your ARCHITECTURE.md codemap against the actual filesystem. New directories, deleted modules, stale entries — all detected without AI.
+
+**Stack-aware quickstart** — `forgedocs quickstart --preset nextjs` generates documentation scaffolds tailored to your tech stack (Next.js, FastAPI, Rails, Go, Rust, and more).
+
+**Export anywhere** — Export docs as self-contained HTML (for sharing) or JSON (for integrations). No server needed.
+
+**VS Code extension** — Doc health in the status bar, documentation browser in the sidebar, drift warnings inline.
 
 ## How it works
 
@@ -111,17 +129,66 @@ Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshnes
 | Command | Description |
 |---------|-------------|
 | `forgedocs init` | Interactive setup — discover repos, create symlinks |
+| `forgedocs quickstart [path]` | Bootstrap docs in a repo (detect stack, scaffold, install commands) |
 | `forgedocs dev` | Start the documentation dev server |
 | `forgedocs build` | Build static site for deployment |
 | `forgedocs preview` | Preview the built site |
 | `forgedocs add <path>` | Add a specific repo by path |
 | `forgedocs remove <name>` | Remove a repo from the site |
 | `forgedocs status` | Show status of all tracked repos |
+| `forgedocs score [path]` | Show doc health score (0–100) for a repo or all repos |
+| `forgedocs badge [path]` | Generate SVG doc health badge |
+| `forgedocs diff [path]` | Detect documentation drift (codemap vs filesystem) |
+| `forgedocs export <json\|html> [path]` | Export docs as JSON or self-contained HTML |
+| `forgedocs watch` | Watch repos for changes that need doc updates |
 | `forgedocs install <path>` | Install Claude Code commands into a repo |
 | `forgedocs doctor` | Diagnose common issues |
 | `forgedocs mcp` | Start MCP server for Claude Code |
 
-Options: `--verbose` · `--json` (on `status` and `doctor`) · `--version` · `--help`
+Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`) · `--preset <name>` · `--output <file>` · `--force` · `--version` · `--help`
+
+### Stack Presets
+
+Use with `forgedocs quickstart --preset <name>`:
+
+| Preset | Auto-detected by |
+|--------|-----------------|
+| `nextjs` | `next.config.*` or `next` dependency |
+| `react` | `react` dependency (without Next.js) |
+| `fastapi` | `fastapi` in Python deps |
+| `django` | `django` in Python deps or `manage.py` |
+| `express` | `express` dependency |
+| `nestjs` | `@nestjs/core` dependency |
+| `rails` | `Gemfile` + `config/routes.rb` |
+| `go` | `go.mod` |
+| `rust` | `Cargo.toml` |
+
+## Plugins
+
+Extend Forgedocs with plugins in `docsite.config.mjs`:
+
+```js
+export default {
+  plugins: [
+    'forgedocs-plugin-openapi',              // npm package
+    ['forgedocs-plugin-mermaid', { theme: 'dark' }],  // with options
+    './my-local-plugin.mjs',                 // local file
+  ]
+}
+```
+
+Plugins can add pages, sidebar items, and hook into discovery/build. See `lib/plugins.mjs` for the API.
+
+## VS Code Extension
+
+The `extensions/vscode/` directory contains a VS Code extension that provides:
+
+- **Status bar** — doc health score at a glance
+- **Sidebar** — browse ARCHITECTURE.md, features, ADRs, glossary
+- **Drift warnings** — notified when code changes may need doc updates
+- **Commands** — open architecture, check drift, launch doc site
+
+Activates automatically when a workspace contains `ARCHITECTURE.md`.
 
 ## Configuration
 
@@ -133,6 +200,7 @@ export default {
   scanDirs: ['~/projects', '~/work'],
   nestedDirs: ['packages', 'services', 'apps'],
   maxDepth: 3,
+  plugins: [],
 }
 ```
 

@@ -1,0 +1,63 @@
+{
+  "name": "forgedocs-vscode",
+  "displayName": "Forgedocs",
+  "description": "Architecture documentation health monitoring for VS Code — doc health score, drift detection, and quick navigation.",
+  "version": "0.1.0",
+  "publisher": "forgedocs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/laport-n/forgedocs.git",
+    "directory": "extensions/vscode"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["documentation", "architecture", "forgedocs", "adr"],
+  "activationEvents": [
+    "workspaceContains:ARCHITECTURE.md"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "forgedocs.showHealth",
+        "title": "Forgedocs: Show Doc Health Score"
+      },
+      {
+        "command": "forgedocs.showDrift",
+        "title": "Forgedocs: Check Documentation Drift"
+      },
+      {
+        "command": "forgedocs.openArchitecture",
+        "title": "Forgedocs: Open ARCHITECTURE.md"
+      },
+      {
+        "command": "forgedocs.openInBrowser",
+        "title": "Forgedocs: Open in Doc Site"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "forgedocs",
+          "title": "Forgedocs",
+          "icon": "$(book)"
+        }
+      ]
+    },
+    "views": {
+      "forgedocs": [
+        {
+          "id": "forgedocs.docs",
+          "name": "Documentation"
+        },
+        {
+          "id": "forgedocs.health",
+          "name": "Health Score"
+        }
+      ]
+    }
+  }
+}

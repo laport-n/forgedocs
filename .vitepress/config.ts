@@ -7,6 +7,7 @@ interface ForgedocsConfig {
   title?: string
   description?: string
   github?: string
+  base?: string
   scanDirs?: string[]
   nestedDirs?: string[]
   extraExcludes?: string[]
@@ -26,6 +27,7 @@ if (fs.existsSync(userConfigPath)) {
 const siteTitle = userConfig.title || 'Forgedocs'
 const siteDescription = userConfig.description || 'Architecture documentation for your services'
 const githubUrl = userConfig.github || ''
+const basePath = userConfig.base || process.env.VITEPRESS_BASE || '/'
 const extraExcludes: string[] = userConfig.extraExcludes || []
 
 const contentDir = path.resolve('content')
@@ -325,6 +327,7 @@ if (githubUrl) {
 export default defineConfig({
   title: siteTitle,
   description: siteDescription,
+  base: basePath,
   srcDir: '.',
   ignoreDeadLinks: true,
 

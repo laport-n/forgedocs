@@ -1,0 +1,55 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install --no-audit --no-fund
+
+      - name: Setup demo content
+        run: |
+          mkdir -p content
+          ln -s "$GITHUB_WORKSPACE/examples/forgedocs-self" content/forgedocs
+          ln -s "$GITHUB_WORKSPACE/examples/sample-repo" content/sample-repo
+          echo '{"forgedocs":"'$GITHUB_WORKSPACE'/examples/forgedocs-self","sample-repo":"'$GITHUB_WORKSPACE'/examples/sample-repo"}' > .repos.json
+
+      - name: Build VitePress
+        env:
+          VITEPRESS_BASE: /forgedocs/
+        run: npx vitepress build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .vitepress/dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -13,7 +13,7 @@ Docforge is a local documentation viewer. It runs on your machine, reads local f
 If you find a security issue, please report it responsibly:
 
 1. **Do NOT open a public GitHub Issue**
-2. Email: [open an issue with the `security` label](https://github.com/nlaporte/docforge/issues/new?labels=security) with details
+2. Email: [open an issue with the `security` label](https://github.com/laport-n/forgedocs/issues/new?labels=security) with details
 3. Include steps to reproduce and potential impact
 
 We will respond within 7 days and provide a fix timeline.

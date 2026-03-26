@@ -11,7 +11,7 @@ npm run dev
 
 ## Overview
 
-This is a demo service that demonstrates how to structure documentation for use with [Docforge](https://github.com/nlaporte/docforge).
+This is a demo service that demonstrates how to structure documentation for use with [Docforge](https://github.com/laport-n/forgedocs).
 
 ## Files
 

@@ -8,8 +8,8 @@ Architecture documentation framework for codebases. Auto-discovers repos, render
 
 ```bash
 npm install -g forgedocs
-docforge init
-docforge dev
+forgedocs init
+forgedocs dev
 ```
 
 Open http://localhost:5173.
@@ -17,11 +17,11 @@ Open http://localhost:5173.
 Or without global install:
 
 ```bash
-git clone https://github.com/nlaporte/docforge.git
-cd docforge
+git clone https://github.com/laport-n/forgedocs.git
+cd forgedocs
 npm install
-npx docforge init
-npx docforge dev
+npx forgedocs init
+npx forgedocs dev
 ```
 
 ## The Problem
@@ -57,7 +57,7 @@ Each layer is progressively more detailed and less stable. The key: **don't docu
 Docforge doesn't contain documentation itself. It **auto-discovers** your local repos and creates symlinks to their docs, then renders everything as a unified site with VitePress.
 
 ```
-docforge/                  ← this tool
+forgedocs/                 ← this tool
 ├── content/               ← symlinks (gitignored, created by init)
 │   ├── my-api/            → ~/projects/my-api/
 │   └── my-service/        → ~/projects/my-service/
@@ -69,26 +69,27 @@ A repo is detected if it contains an `ARCHITECTURE.md` at its root.
 ## CLI Reference
 
 ```
-docforge <command> [options]
+forgedocs <command> [options]
 ```
 
 | Command | Description |
 |---------|-------------|
-| `docforge init` | Interactive setup — discover repos, create symlinks |
-| `docforge dev` | Start the local documentation dev server |
-| `docforge build` | Build static site in `.vitepress/dist/` |
-| `docforge preview` | Preview the built site |
-| `docforge add <path>` | Add a specific repo by path |
-| `docforge remove <name>` | Remove a repo from the site |
-| `docforge status` | Show status of all tracked repos |
-| `docforge install <path>` | Install Claude Code commands into a repo |
-| `docforge doctor` | Diagnose common issues |
+| `forgedocs init` | Interactive setup — discover repos, create symlinks |
+| `forgedocs dev` | Start the local documentation dev server |
+| `forgedocs build` | Build static site in `.vitepress/dist/` |
+| `forgedocs preview` | Preview the built site |
+| `forgedocs add <path>` | Add a specific repo by path |
+| `forgedocs remove <name>` | Remove a repo from the site |
+| `forgedocs status` | Show status of all tracked repos |
+| `forgedocs install <path>` | Install Claude Code commands into a repo |
+| `forgedocs doctor` | Diagnose common issues |
+| `forgedocs help` | Show help and list all commands |
 
 Options: `--verbose` / `-v` for debug output, `--version`, `--help`.
 
 ## Claude Code Commands
 
-Install into any repo with `docforge install ~/path/to/repo`, then use in Claude Code:
+Install into any repo with `forgedocs install ~/path/to/repo`, then use in Claude Code:
 
 | Command | What it does | When to use |
 |---------|-------------|-------------|
@@ -188,13 +189,13 @@ export default {
 
 ## Troubleshooting
 
-Run `docforge doctor` to diagnose issues automatically.
+Run `forgedocs doctor` to diagnose issues automatically.
 
-**`docforge dev` says "No repos configured"** — Run `docforge init` first.
+**`forgedocs dev` says "No repos configured"** — Run `forgedocs init` first.
 
-**A service doesn't appear** — Check it has `ARCHITECTURE.md` at root. Run `docforge init` to refresh.
+**A service doesn't appear** — Check it has `ARCHITECTURE.md` at root. Run `forgedocs init` to refresh.
 
-**Changes don't appear** — VitePress watches through symlinks. Restart `docforge dev` if needed.
+**Changes don't appear** — VitePress watches through symlinks. Restart `forgedocs dev` if needed.
 
 **Search doesn't find content** — Search index builds on startup. Restart to re-index.
 

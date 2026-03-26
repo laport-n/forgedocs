@@ -12,7 +12,7 @@ export default {
   description: 'Architecture documentation for your services',
 
   /** GitHub organization or user URL (shown as social link) */
-  github: 'https://github.com/nlaporte/docforge',
+  github: 'https://github.com/laport-n/forgedocs',
 
   /**
    * Additional directories to scan for repos during setup.

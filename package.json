@@ -7,14 +7,14 @@
   "author": "Nicolas Laporte",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nlaporte/docforge.git"
+    "url": "https://github.com/laport-n/forgedocs.git"
   },
-  "homepage": "https://github.com/nlaporte/docforge",
+  "homepage": "https://github.com/laport-n/forgedocs",
   "bugs": {
-    "url": "https://github.com/nlaporte/docforge/issues"
+    "url": "https://github.com/laport-n/forgedocs/issues"
   },
   "bin": {
-    "docforge": "bin/docforge.mjs"
+    "forgedocs": "bin/forgedocs.mjs"
   },
   "files": [
     "bin/",

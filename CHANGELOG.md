@@ -7,10 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.3.0] — 2026-03-26
 
 ### Added
-- `docforge` CLI with subcommands: `init`, `dev`, `build`, `preview`, `add`, `remove`, `status`, `install`, `doctor`
-- `docforge remove <name>` — remove a repo from the documentation site
-- `docforge status` — show tracked repos with doc coverage details (features, ADRs, CLAUDE.md)
-- `docforge doctor` — diagnose common issues (Node version, broken symlinks, missing config)
+- `forgedocs` CLI with subcommands: `init`, `dev`, `build`, `preview`, `add`, `remove`, `status`, `install`, `doctor`
+- `forgedocs remove <name>` — remove a repo from the documentation site
+- `forgedocs status` — show tracked repos with doc coverage details (features, ADRs, CLAUDE.md)
+- `forgedocs doctor` — diagnose common issues (Node version, broken symlinks, missing config)
 - Modular `lib/` architecture: `config.mjs`, `discovery.mjs`, `linker.mjs`, `installer.mjs`, `utils.mjs`
 - Biome linter/formatter with `npm run lint` and `npm run format`
 - GitHub Actions CI workflow (lint, tests on Node 18/20/22, VitePress build)
@@ -27,7 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Renamed** from `docsite` to `forgedocs`
 - Package version bumped to 0.3.0
 - Scripts refactored to use shared `lib/` modules
-- Repository URLs updated to `nlaporte/docforge`
+- Repository URLs updated to `laport-n/forgedocs`
 - Documentation rewritten for Docforge branding and CLI workflow
 
 ## [0.2.0] — 2026-03-26

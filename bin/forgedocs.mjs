@@ -17,9 +17,9 @@ const TEMPLATES_DIR = path.join(ROOT, 'templates')
 const VERSION = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf-8')).version
 
 const HELP = `
-docforge v${VERSION} — Architecture documentation framework
+forgedocs v${VERSION} — Architecture documentation framework
 
-Usage: docforge <command> [options]
+Usage: forgedocs <command> [options]
 
 Commands:
   init                     Interactive setup — discover and link repos
@@ -31,6 +31,7 @@ Commands:
   status                   Show status of all tracked repos
   install <path> [--force] Install Claude Code commands into a repo
   doctor                   Diagnose common issues
+  help                     Show this help
 
 Options:
   --verbose, -v            Show detailed debug output
@@ -108,7 +109,7 @@ async function cmdInit() {
   console.log('\nCreating links\n')
   linkRepos(repos, CONTENT_DIR, ROOT)
 
-  console.log('\nSetup complete! Run: docforge dev\n')
+  console.log('\nSetup complete! Run: forgedocs dev\n')
 }
 
 async function cmdDev() {
@@ -131,7 +132,7 @@ async function cmdPreview() {
 function cmdAdd() {
   const targetPath = args.find((a) => !a.startsWith('-'))
   if (!targetPath) {
-    console.error('Usage: docforge add <path>')
+    console.error('Usage: forgedocs add <path>')
     process.exit(1)
   }
 
@@ -152,7 +153,7 @@ function cmdAdd() {
 function cmdRemove() {
   const repoName = args.find((a) => !a.startsWith('-'))
   if (!repoName) {
-    console.error('Usage: docforge remove <name>')
+    console.error('Usage: forgedocs remove <name>')
     process.exit(1)
   }
 
@@ -175,7 +176,7 @@ function cmdRemove() {
 function cmdStatus() {
   const repos = loadReposConfig(CONFIG_PATH)
   if (!repos || Object.keys(repos).length === 0) {
-    console.log('No repos configured. Run: docforge init')
+    console.log('No repos configured. Run: forgedocs init')
     return
   }
 
@@ -210,7 +211,7 @@ function cmdStatus() {
       }
       if (features.length > 0) console.log(`     Docs: ${features.join(', ')}`)
     }
-    if (!linkOk) console.log('     Link: broken (run docforge init)')
+    if (!linkOk) console.log('     Link: broken (run forgedocs init)')
     console.log()
   }
 }
@@ -218,7 +219,7 @@ function cmdStatus() {
 function cmdInstall() {
   const targetPath = args.find((a) => !a.startsWith('-'))
   if (!targetPath) {
-    console.error('Usage: docforge install <path> [--force]')
+    console.error('Usage: forgedocs install <path> [--force]')
     process.exit(1)
   }
 
@@ -284,7 +285,7 @@ function cmdDoctor() {
   try {
     const repos = loadReposConfig(CONFIG_PATH)
     if (!repos) {
-      console.log('  \u26A0\uFE0F  No .repos.json found — run: docforge init')
+      console.log('  \u26A0\uFE0F  No .repos.json found — run: forgedocs init')
       issues++
     } else {
       const count = Object.keys(repos).length
@@ -313,7 +314,7 @@ function cmdDoctor() {
 
   // Check content/ directory
   if (!fs.existsSync(CONTENT_DIR)) {
-    console.log('  \u26A0\uFE0F  content/ directory missing — run: docforge init')
+    console.log('  \u26A0\uFE0F  content/ directory missing — run: forgedocs init')
     issues++
   } else {
     const links = fs.readdirSync(CONTENT_DIR)
@@ -327,7 +328,7 @@ function cmdDoctor() {
       }
     }
     if (brokenLinks > 0) {
-      console.log(`  \u26A0\uFE0F  ${brokenLinks} broken symlink(s) in content/ — run: docforge init`)
+      console.log(`  \u26A0\uFE0F  ${brokenLinks} broken symlink(s) in content/ — run: forgedocs init`)
       issues++
     } else {
       console.log(`  \u2705 content/ (${links.length} linked repos)`)
@@ -360,7 +361,7 @@ function cmdDoctor() {
 async function ensureSetup() {
   const repos = loadReposConfig(CONFIG_PATH)
   if (!repos) {
-    console.log('No repos configured. Run: docforge init\n')
+    console.log('No repos configured. Run: forgedocs init\n')
     process.exit(1)
   }
   let needsRefresh = !fs.existsSync(CONTENT_DIR)
@@ -379,7 +380,7 @@ async function ensureSetup() {
 }
 
 async function main() {
-  if (!command || command === '--help' || command === '-h') {
+  if (!command || command === 'help' || command === '--help' || command === '-h') {
     console.log(HELP)
     process.exit(0)
   }

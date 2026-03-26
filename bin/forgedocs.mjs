@@ -9,12 +9,15 @@ import { installTemplates } from '../lib/installer.mjs'
 import { linkRepos } from '../lib/linker.mjs'
 import { expandHome } from '../lib/utils.mjs'
 
-const ROOT = path.dirname(path.dirname(new URL(import.meta.url).pathname))
-const CONFIG_PATH = path.join(ROOT, '.repos.json')
-const CONTENT_DIR = path.join(ROOT, 'content')
-const TEMPLATES_DIR = path.join(ROOT, 'templates')
+// PKG_ROOT = where forgedocs is installed (templates, vitepress config, node_modules)
+// CWD = where the user runs the command (repos.json, content/, docsite.config.mjs)
+const PKG_ROOT = path.dirname(path.dirname(new URL(import.meta.url).pathname))
+const CWD = process.cwd()
+const CONFIG_PATH = path.join(CWD, '.repos.json')
+const CONTENT_DIR = path.join(CWD, 'content')
+const TEMPLATES_DIR = path.join(PKG_ROOT, 'templates')
 
-const VERSION = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf-8')).version
+const VERSION = JSON.parse(fs.readFileSync(path.join(PKG_ROOT, 'package.json'), 'utf-8')).version
 
 const HELP = `
 forgedocs v${VERSION} — Architecture documentation framework
@@ -53,10 +56,27 @@ async function askAddMore() {
   })
 }
 
-async function cmdInit() {
-  const config = await loadConfig(ROOT)
+/** Ensure VitePress config and index.md exist in CWD (copy from package if needed) */
+function ensureVitepressFiles() {
+  const configDest = path.join(CWD, '.vitepress', 'config.ts')
+  if (!fs.existsSync(configDest)) {
+    fs.mkdirSync(path.join(CWD, '.vitepress'), { recursive: true })
+    fs.copyFileSync(path.join(PKG_ROOT, '.vitepress', 'config.ts'), configDest)
+  }
+  const indexDest = path.join(CWD, 'index.md')
+  if (!fs.existsSync(indexDest)) {
+    fs.copyFileSync(path.join(PKG_ROOT, 'index.md'), indexDest)
+  }
+  const configMjsDest = path.join(CWD, 'docsite.config.mjs')
+  if (!fs.existsSync(configMjsDest)) {
+    fs.copyFileSync(path.join(PKG_ROOT, 'docsite.config.mjs'), configMjsDest)
+  }
+}
 
-  console.log('\nDocforge Setup\n')
+async function cmdInit() {
+  const config = await loadConfig(CWD)
+
+  console.log('\nForgedocs Setup\n')
 
   const repos = loadReposConfig(CONFIG_PATH) || {}
 
@@ -71,7 +91,7 @@ async function cmdInit() {
   }
 
   // Build search directories
-  const searchDirs = [path.resolve(ROOT, '..'), ...config.scanDirs.map((d) => expandHome(d))]
+  const searchDirs = [path.resolve(CWD, '..'), ...config.scanDirs.map((d) => expandHome(d))]
 
   // Auto-detect new repos
   console.log('\nScanning for repositories...\n')
@@ -107,26 +127,30 @@ async function cmdInit() {
   console.log(`\nConfig saved (${Object.keys(repos).length} repos)`)
 
   console.log('\nCreating links\n')
-  linkRepos(repos, CONTENT_DIR, ROOT)
+  linkRepos(repos, CONTENT_DIR, CWD)
+
+  ensureVitepressFiles()
 
   console.log('\nSetup complete! Run: forgedocs dev\n')
 }
 
 async function cmdDev() {
   await ensureSetup()
+  ensureVitepressFiles()
   const { execFileSync } = await import('node:child_process')
-  execFileSync('npx', ['vitepress', 'dev'], { cwd: ROOT, stdio: 'inherit' })
+  execFileSync('npx', ['vitepress', 'dev'], { cwd: CWD, stdio: 'inherit' })
 }
 
 async function cmdBuild() {
   await ensureSetup()
+  ensureVitepressFiles()
   const { execFileSync } = await import('node:child_process')
-  execFileSync('npx', ['vitepress', 'build'], { cwd: ROOT, stdio: 'inherit' })
+  execFileSync('npx', ['vitepress', 'build'], { cwd: CWD, stdio: 'inherit' })
 }
 
 async function cmdPreview() {
   const { execFileSync } = await import('node:child_process')
-  execFileSync('npx', ['vitepress', 'preview'], { cwd: ROOT, stdio: 'inherit' })
+  execFileSync('npx', ['vitepress', 'preview'], { cwd: CWD, stdio: 'inherit' })
 }
 
 function cmdAdd() {
@@ -147,7 +171,7 @@ function cmdAdd() {
   repos[name] = resolved
   saveReposConfig(CONFIG_PATH, repos)
   console.log(`Added ${name} -> ${resolved}`)
-  linkRepos(repos, CONTENT_DIR, ROOT)
+  linkRepos(repos, CONTENT_DIR, CWD)
 }
 
 function cmdRemove() {
@@ -158,7 +182,7 @@ function cmdRemove() {
   }
 
   const repos = loadReposConfig(CONFIG_PATH)
-  if (!repos || !repos[repoName]) {
+  if (!repos?.hasOwnProperty(repoName)) {
     console.error(`Repo "${repoName}" not found in config.`)
     const available = repos ? Object.keys(repos) : []
     if (available.length > 0) {
@@ -170,7 +194,7 @@ function cmdRemove() {
   delete repos[repoName]
   saveReposConfig(CONFIG_PATH, repos)
   console.log(`Removed "${repoName}" from config.`)
-  linkRepos(repos, CONTENT_DIR, ROOT)
+  linkRepos(repos, CONTENT_DIR, CWD)
 }
 
 function cmdStatus() {
@@ -238,7 +262,7 @@ function cmdInstall() {
 
   const { installed, updated, skipped } = installTemplates(TEMPLATES_DIR, targetRepo, { force })
 
-  console.log(`\nDocforge — ${path.basename(targetRepo)}\n`)
+  console.log(`\nForgedocs — ${path.basename(targetRepo)}\n`)
 
   if (installed.length > 0) {
     console.log('Installed:')
@@ -269,13 +293,13 @@ Next steps:
 }
 
 function cmdDoctor() {
-  console.log('\nDocforge Doctor\n')
+  console.log('\nForgedocs Doctor\n')
   let issues = 0
 
   // Check Node.js version
   const nodeVersion = process.versions.node.split('.').map(Number)
-  if (nodeVersion[0] < 18) {
-    console.log(`  \u274C Node.js ${process.versions.node} — requires >= 18.0.0`)
+  if (nodeVersion[0] < 20) {
+    console.log(`  \u274C Node.js ${process.versions.node} — requires >= 20.0.0`)
     issues++
   } else {
     console.log(`  \u2705 Node.js ${process.versions.node}`)
@@ -304,7 +328,7 @@ function cmdDoctor() {
         }
       }
       if (brokenCount === 0) {
-        console.log(`  \u2705 All repo paths valid`)
+        console.log('  \u2705 All repo paths valid')
       }
     }
   } catch (err) {
@@ -336,7 +360,7 @@ function cmdDoctor() {
   }
 
   // Check VitePress
-  const vitepressPath = path.join(ROOT, 'node_modules', 'vitepress')
+  const vitepressPath = path.join(PKG_ROOT, 'node_modules', 'vitepress')
   if (!fs.existsSync(vitepressPath)) {
     console.log('  \u274C VitePress not installed — run: npm install')
     issues++
@@ -345,7 +369,7 @@ function cmdDoctor() {
   }
 
   // Check docsite.config.mjs
-  const configExists = fs.existsSync(path.join(ROOT, 'docsite.config.mjs'))
+  const configExists = fs.existsSync(path.join(CWD, 'docsite.config.mjs'))
   console.log(
     `  ${configExists ? '\u2705' : '\u26A0\uFE0F'} docsite.config.mjs ${configExists ? 'found' : 'not found (using defaults)'}`,
   )
@@ -375,7 +399,7 @@ async function ensureSetup() {
   }
   if (needsRefresh) {
     console.log('Refreshing links...')
-    linkRepos(repos, CONTENT_DIR, ROOT)
+    linkRepos(repos, CONTENT_DIR, CWD)
   }
 }
 

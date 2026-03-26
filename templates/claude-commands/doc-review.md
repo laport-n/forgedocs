@@ -57,3 +57,24 @@ Produce a report with 3 sections:
 - 🟢 **Suggestions** — improvements, new feature doc candidates
 
 End with: "Estimated maintenance effort: X minutes"
+
+### Step 4 — Fix (optional)
+After presenting the report, ask: "Would you like me to fix these issues? (all / stale only / pick specific items)"
+
+If the user confirms:
+
+**For 🔴 Stale items:**
+1. Show the current incorrect section alongside the correct state from code
+2. Propose the fix in diff format
+3. Apply after confirmation
+
+**For 🟡 Gaps:**
+1. For missing README.md: generate one using `/doc-init` structure (title, overview, setup)
+2. For missing feature docs: offer to run `/doc-feature` for each
+3. For missing ADRs: offer to run `/doc-adr` for each
+4. For incomplete sections (`[To be documented]`): investigate the code and fill in the gaps
+
+**For all fixes:**
+- Apply changes one file at a time, showing the diff before each
+- After all fixes, re-run the invariant checks from Step 2 to verify nothing broke
+- Summarize what was fixed and what still needs manual attention

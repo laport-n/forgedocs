@@ -7,6 +7,7 @@ import { loadConfig, loadReposConfig, saveReposConfig } from '../lib/config.mjs'
 import { detectScanDirs, isValidRepo, scanForRepos } from '../lib/discovery.mjs'
 import { installTemplates } from '../lib/installer.mjs'
 import { linkRepos } from '../lib/linker.mjs'
+import { startMcpServer } from '../lib/mcp-server.mjs'
 import { expandHome } from '../lib/utils.mjs'
 
 // PKG_ROOT = where forgedocs is installed (templates, vitepress config, node_modules)
@@ -26,6 +27,7 @@ Usage: forgedocs <command> [options]
 
 Commands:
   init                     Interactive setup — discover and link repos
+  mcp                      Start MCP server (for Claude Code integration)
   dev                      Start the documentation dev server
   build                    Build static documentation site
   preview                  Preview the built site
@@ -100,7 +102,7 @@ async function cmdInit() {
   console.log('Scanning for repositories...\n')
   const discovered = {}
   for (const searchDir of allDirs) {
-    const found = scanForRepos(searchDir, config.nestedDirs)
+    const found = scanForRepos(searchDir, config.nestedDirs, { maxDepth: config.maxDepth })
     for (const [name, repoPath] of Object.entries(found)) {
       if (!repos[name]) {
         discovered[name] = repoPath
@@ -207,6 +209,7 @@ function cmdAdd() {
   saveReposConfig(CONFIG_PATH, repos)
   console.log(`Added ${name} -> ${resolved}`)
   linkRepos(repos, CONTENT_DIR, CWD)
+  console.log('\nNote: Restart `forgedocs dev` if the dev server is running to see the new repo.')
 }
 
 function cmdRemove() {
@@ -217,7 +220,7 @@ function cmdRemove() {
   }
 
   const repos = loadReposConfig(CONFIG_PATH)
-  if (!repos?.hasOwnProperty(repoName)) {
+  if (!repos || !Object.hasOwn(repos, repoName)) {
     console.error(`Repo "${repoName}" not found in config.`)
     const available = repos ? Object.keys(repos) : []
     if (available.length > 0) {
@@ -233,13 +236,18 @@ function cmdRemove() {
 }
 
 function cmdStatus() {
+  const jsonOutput = hasFlag('--json')
   const repos = loadReposConfig(CONFIG_PATH)
   if (!repos || Object.keys(repos).length === 0) {
-    console.log('No repos configured. Run: forgedocs init')
+    if (jsonOutput) {
+      console.log(JSON.stringify({ repos: {} }))
+    } else {
+      console.log('No repos configured. Run: forgedocs init')
+    }
     return
   }
 
-  console.log(`\nTracked repositories (${Object.keys(repos).length}):\n`)
+  const result = {}
 
   for (const [name, repoPath] of Object.entries(repos)) {
     const exists = fs.existsSync(repoPath)
@@ -249,28 +257,45 @@ function cmdStatus() {
     const linkOk = fs.existsSync(path.join(CONTENT_DIR, name))
 
     const status = !exists ? 'MISSING' : !hasArch ? 'NO ARCH' : 'OK'
-    const statusIcon = status === 'OK' ? '\u2705' : status === 'MISSING' ? '\u274C' : '\u26A0\uFE0F'
 
-    console.log(`  ${statusIcon} ${name}`)
-    console.log(`     Path: ${repoPath}`)
-    console.log(`     Status: ${status}`)
+    let featureCount = 0
+    let adrCount = 0
     if (exists) {
-      const features = []
-      if (hasDocs) features.push('docs/')
-      if (hasClaude) features.push('CLAUDE.md')
       const docsFeatures = path.join(repoPath, 'docs', 'features')
       if (fs.existsSync(docsFeatures)) {
-        const featureCount = fs.readdirSync(docsFeatures).filter((f) => f.endsWith('.md')).length
-        if (featureCount > 0) features.push(`${featureCount} features`)
+        featureCount = fs.readdirSync(docsFeatures).filter((f) => f.endsWith('.md')).length
       }
       const docsAdr = path.join(repoPath, 'docs', 'adr')
       if (fs.existsSync(docsAdr)) {
-        const adrCount = fs.readdirSync(docsAdr).filter((f) => f.endsWith('.md') && f !== 'README.md').length
-        if (adrCount > 0) features.push(`${adrCount} ADRs`)
+        adrCount = fs.readdirSync(docsAdr).filter((f) => f.endsWith('.md') && f !== 'README.md').length
       }
+    }
+
+    result[name] = { path: repoPath, status, hasDocs, hasClaude, linkOk, featureCount, adrCount }
+  }
+
+  if (jsonOutput) {
+    console.log(JSON.stringify({ repos: result }, null, 2))
+    return
+  }
+
+  console.log(`\nTracked repositories (${Object.keys(repos).length}):\n`)
+
+  for (const [name, info] of Object.entries(result)) {
+    const statusIcon = info.status === 'OK' ? '\u2705' : info.status === 'MISSING' ? '\u274C' : '\u26A0\uFE0F'
+
+    console.log(`  ${statusIcon} ${name}`)
+    console.log(`     Path: ${info.path}`)
+    console.log(`     Status: ${info.status}`)
+    if (info.status !== 'MISSING') {
+      const features = []
+      if (info.hasDocs) features.push('docs/')
+      if (info.hasClaude) features.push('CLAUDE.md')
+      if (info.featureCount > 0) features.push(`${info.featureCount} features`)
+      if (info.adrCount > 0) features.push(`${info.adrCount} ADRs`)
       if (features.length > 0) console.log(`     Docs: ${features.join(', ')}`)
     }
-    if (!linkOk) console.log('     Link: broken (run forgedocs init)')
+    if (!info.linkOk) console.log('     Link: broken (run forgedocs init)')
     console.log()
   }
 }
@@ -328,53 +353,47 @@ Next steps:
 }
 
 function cmdDoctor() {
-  console.log('\nForgedocs Doctor\n')
+  const jsonOutput = hasFlag('--json')
+  const checks = []
   let issues = 0
+
+  function addCheck(name, status, message) {
+    checks.push({ name, status, message })
+    if (status === 'error' || status === 'warn') issues++
+  }
 
   // Check Node.js version
   const nodeVersion = process.versions.node.split('.').map(Number)
   if (nodeVersion[0] < 20) {
-    console.log(`  \u274C Node.js ${process.versions.node} — requires >= 20.0.0`)
-    issues++
+    addCheck('node', 'error', `Node.js ${process.versions.node} — requires >= 20.0.0`)
   } else {
-    console.log(`  \u2705 Node.js ${process.versions.node}`)
+    addCheck('node', 'ok', `Node.js ${process.versions.node}`)
   }
 
   // Check .repos.json
   try {
     const repos = loadReposConfig(CONFIG_PATH)
     if (!repos) {
-      console.log('  \u26A0\uFE0F  No .repos.json found — run: forgedocs init')
-      issues++
+      addCheck('repos-config', 'warn', 'No .repos.json found — run: forgedocs init')
     } else {
       const count = Object.keys(repos).length
-      console.log(`  \u2705 .repos.json (${count} repos)`)
+      addCheck('repos-config', 'ok', `.repos.json (${count} repos)`)
 
-      // Validate each repo
-      let brokenCount = 0
       for (const [name, repoPath] of Object.entries(repos)) {
         if (!fs.existsSync(repoPath)) {
-          console.log(`  \u274C ${name}: path not found (${repoPath})`)
-          brokenCount++
-          issues++
+          addCheck(`repo:${name}`, 'error', `path not found (${repoPath})`)
         } else if (!isValidRepo(repoPath)) {
-          console.log(`  \u26A0\uFE0F  ${name}: no ARCHITECTURE.md`)
-          issues++
+          addCheck(`repo:${name}`, 'warn', 'no ARCHITECTURE.md')
         }
-      }
-      if (brokenCount === 0) {
-        console.log('  \u2705 All repo paths valid')
       }
     }
   } catch (err) {
-    console.log(`  \u274C .repos.json is corrupted: ${err.message}`)
-    issues++
+    addCheck('repos-config', 'error', `.repos.json is corrupted: ${err.message}`)
   }
 
   // Check content/ directory
   if (!fs.existsSync(CONTENT_DIR)) {
-    console.log('  \u26A0\uFE0F  content/ directory missing — run: forgedocs init')
-    issues++
+    addCheck('content-dir', 'warn', 'content/ directory missing — run: forgedocs init')
   } else {
     const links = fs.readdirSync(CONTENT_DIR)
     let brokenLinks = 0
@@ -387,27 +406,38 @@ function cmdDoctor() {
       }
     }
     if (brokenLinks > 0) {
-      console.log(`  \u26A0\uFE0F  ${brokenLinks} broken symlink(s) in content/ — run: forgedocs init`)
-      issues++
+      addCheck('content-dir', 'warn', `${brokenLinks} broken symlink(s) in content/ — run: forgedocs init`)
     } else {
-      console.log(`  \u2705 content/ (${links.length} linked repos)`)
+      addCheck('content-dir', 'ok', `content/ (${links.length} linked repos)`)
     }
   }
 
   // Check VitePress
   const vitepressPath = path.join(PKG_ROOT, 'node_modules', 'vitepress')
   if (!fs.existsSync(vitepressPath)) {
-    console.log('  \u274C VitePress not installed — run: npm install')
-    issues++
+    addCheck('vitepress', 'error', 'VitePress not installed — run: npm install')
   } else {
-    console.log('  \u2705 VitePress installed')
+    addCheck('vitepress', 'ok', 'VitePress installed')
   }
 
   // Check docsite.config.mjs
   const configExists = fs.existsSync(path.join(CWD, 'docsite.config.mjs'))
-  console.log(
-    `  ${configExists ? '\u2705' : '\u26A0\uFE0F'} docsite.config.mjs ${configExists ? 'found' : 'not found (using defaults)'}`,
+  addCheck(
+    'config',
+    configExists ? 'ok' : 'warn',
+    `docsite.config.mjs ${configExists ? 'found' : 'not found (using defaults)'}`,
   )
+
+  if (jsonOutput) {
+    console.log(JSON.stringify({ checks, issueCount: issues }, null, 2))
+    return
+  }
+
+  console.log('\nForgedocs Doctor\n')
+  for (const check of checks) {
+    const icon = check.status === 'ok' ? '\u2705' : check.status === 'error' ? '\u274C' : '\u26A0\uFE0F '
+    console.log(`  ${icon} ${check.message}`)
+  }
 
   console.log()
   if (issues === 0) {
@@ -415,6 +445,10 @@ function cmdDoctor() {
   } else {
     console.log(`  ${issues} issue(s) found.\n`)
   }
+}
+
+function cmdMcp() {
+  startMcpServer(CWD)
 }
 
 async function ensureSetup() {
@@ -468,6 +502,8 @@ async function main() {
       return cmdInstall()
     case 'doctor':
       return cmdDoctor()
+    case 'mcp':
+      return cmdMcp()
     default:
       console.error(`Unknown command: ${command}`)
       console.log(HELP)

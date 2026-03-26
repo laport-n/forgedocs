@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] — 2026-03-26
+
+### Added
+- **MCP Server** (`forgedocs mcp`) — JSON-RPC 2.0 over stdio, zero new dependencies. Tools: `list_services`, `get_service_docs`, `search_docs`, `check_freshness`. Lets Claude query the doc site programmatically.
+- **`/doc-adr`** command — standalone ADR creation with auto-numbering and codebase research
+- **`/doc-pr`** command — documentation sync scoped to entire PR (`git diff main...HEAD`)
+- **`--json` flag** on `status` and `doctor` commands for machine-readable output (CI/AI integration)
+- **`maxDepth` config option** in `docsite.config.mjs` — configurable repo scan depth (default: 3)
+- **Circular symlink detection** in linker — prevents content/ from linking back into itself
+- **Debug logging** in VitePress config modules — enabled via `DEBUG` or `VERBOSE` env vars
+- **Coverage reporting** in CI (Node 22, uploaded as artifact)
+- **Monorepo example** (`examples/monorepo/`) — Node.js API + Python worker with `nestedDirs` config
+- **Auto-fix mode** for `/doc-review` (Step 4) — optionally fix stale docs and fill gaps after audit
+- README badges (npm, CI, license)
+- `.repos.json` format documented in README
+- Restart note after `forgedocs add`
+- Community & examples sections in README
+- `npx forgedocs init` as primary quick-start path
+
+### Changed
+- **VitePress config split** into modules: `discovery.ts`, `rewrites.ts`, `sidebar.ts`, `utils.ts` + slim orchestrator `config.ts`
+- All empty `catch {}` blocks replaced with debug logging
+- `doc-freshness.yml` template uses `python3` instead of `date -d` (cross-platform)
+
+### Fixed
+- Removed circular self-dependency (`forgedocs@^0.3.3`) in `package.json`
+- Fixed `hasOwnProperty` lint warning — replaced with `Object.hasOwn()`
+
 ## [0.3.0] — 2026-03-26
 
 ### Added

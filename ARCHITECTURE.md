@@ -8,33 +8,43 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 
 | Module | Path | Purpose |
 |--------|------|---------|
-| CLI | `bin/forgedocs.mjs` | Entry point — routes subcommands (init, dev, build, add, remove, status, install, doctor) |
+| CLI | `bin/forgedocs.mjs` | Entry point — routes subcommands (init, dev, build, add, remove, status, install, doctor, mcp) |
 | Config | `lib/config.mjs` | Loads `docsite.config.mjs` with defaults, validates `.repos.json` |
 | Discovery | `lib/discovery.mjs` | Recursive filesystem scan for repos with `ARCHITECTURE.md`, auto-detects common dirs |
-| Linker | `lib/linker.mjs` | Creates symlinks/junctions/copies in `content/`, with platform fallbacks |
+| Linker | `lib/linker.mjs` | Creates symlinks/junctions/copies in `content/`, with circular symlink detection |
 | Installer | `lib/installer.mjs` | Copies Claude commands, skills, and CI workflows into target repos |
+| MCP Server | `lib/mcp-server.mjs` | JSON-RPC 2.0 over stdio — exposes doc search, read, and freshness tools for AI agents |
 | Utils | `lib/utils.mjs` | `expandHome()`, `formatServiceName()`, `debug()` logging |
-| VitePress Config | `.vitepress/config.ts` | Dynamic sidebar, rewrites, service discovery from `content/` symlinks |
-| Templates | `templates/` | Claude Code commands, skills, and GitHub Actions workflow templates |
+| VitePress Discovery | `.vitepress/discovery.ts` | Discovers services from `content/` symlinks, resolves allowed dirs |
+| VitePress Rewrites | `.vitepress/rewrites.ts` | Generates URL rewrites (README.md → index.md, etc.) |
+| VitePress Sidebar | `.vitepress/sidebar.ts` | Dynamic sidebar generation per service (main, guides, features, ADRs) |
+| VitePress Utils | `.vitepress/utils.ts` | Shared helpers: `debug()`, `formatServiceName()` |
+| VitePress Config | `.vitepress/config.ts` | Orchestrator — imports modules above, defines VitePress config |
+| Templates | `templates/` | Claude Code commands (8), skills, and GitHub Actions workflow templates |
 
 ## Data Flow
 
 ```
 User runs `forgedocs init`
-  → lib/discovery.mjs scans ~/perso, ~/working, ~/projects, etc. (depth 3)
+  → lib/discovery.mjs scans ~/perso, ~/working, ~/projects, etc. (configurable maxDepth)
   → Presents interactive selection (numbered list)
   → User picks repos → saved to .repos.json
-  → lib/linker.mjs creates symlinks: content/<name> → /path/to/repo
+  → lib/linker.mjs creates symlinks: content/<name> → /path/to/repo (with circular detection)
   → Copies .vitepress/config.ts and index.md to CWD
 
 User runs `forgedocs dev`
   → Reads .repos.json, verifies symlinks
   → Starts VitePress dev server
-  → .vitepress/config.ts scans content/ at startup:
-      → Discovers services (directories/symlinks)
-      → Builds URL rewrites (README.md → index.md, ARCHITECTURE.md → architecture.md)
-      → Generates sidebar per service (main, guides, features, ADRs)
+  → .vitepress/config.ts orchestrates:
+      → discovery.ts discovers services from content/ symlinks
+      → rewrites.ts generates URL rewrites (README.md → index.md, etc.)
+      → sidebar.ts generates sidebar per service (main, guides, features, ADRs)
   → Serves on localhost:5173 with hot-reload through symlinks
+
+User runs `forgedocs mcp`
+  → lib/mcp-server.mjs starts JSON-RPC 2.0 server on stdio
+  → Reads .repos.json, exposes tools: list_services, get_service_docs, search_docs, check_freshness
+  → Claude Code queries docs programmatically during coding sessions
 ```
 
 ## Architectural Invariants

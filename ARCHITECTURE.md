@@ -28,6 +28,8 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 | VitePress Config | `.vitepress/config.ts` | Orchestrator — imports modules above, defines VitePress config |
 | Templates | `templates/` | Claude Code commands (8), skills, and GitHub Actions workflow templates |
 | VS Code Extension | `extensions/vscode/` | Status bar health score, sidebar doc browser, drift detection, quick navigation |
+| Scripts | `scripts/` | Legacy npm run scripts (thin wrappers around lib/) |
+| Examples | `examples/` | Sample repos: single-service, monorepo, forgedocs-self |
 
 ## Data Flow
 

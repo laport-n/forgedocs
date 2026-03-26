@@ -1,0 +1,86 @@
+name: Documentation Freshness Check
+
+on:
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  doc-freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if structural changes need doc updates
+        run: |
+          set -e
+
+          WARNINGS=""
+
+          # Detect source root (first match wins)
+          SOURCE_ROOT=""
+          for dir in app src lib pkg internal cmd; do
+            if [ -d "$dir" ]; then
+              SOURCE_ROOT="$dir"
+              break
+            fi
+          done
+
+          if [ -z "$SOURCE_ROOT" ]; then
+            echo "No source root detected, skipping."
+            exit 0
+          fi
+
+          # Get list of changed files in this PR
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # Check 1: New or removed directories in source root → ARCHITECTURE.md
+          DIR_CHANGES=$(echo "$CHANGED" | grep -E "^${SOURCE_ROOT}/[^/]+/" | sed "s|${SOURCE_ROOT}/\([^/]*\)/.*|\1|" | sort -u || true)
+          if [ -n "$DIR_CHANGES" ]; then
+            if ! echo "$CHANGED" | grep -q "ARCHITECTURE.md"; then
+              WARNINGS="${WARNINGS}\n⚠️ New/changed modules in \`${SOURCE_ROOT}/\` but \`ARCHITECTURE.md\` was not updated: $(echo $DIR_CHANGES | tr '\n' ', ')"
+            fi
+          fi
+
+          # Check 2: New route/endpoint files → service-map.md
+          ROUTE_CHANGES=$(echo "$CHANGED" | grep -iE "(route|endpoint|controller|handler)" || true)
+          if [ -n "$ROUTE_CHANGES" ]; then
+            if ! echo "$CHANGED" | grep -q "docs/service-map.md"; then
+              WARNINGS="${WARNINGS}\n⚠️ Route/endpoint changes detected but \`docs/service-map.md\` was not updated."
+            fi
+          fi
+
+          # Check 3: Auth/security file changes → security.md
+          SEC_CHANGES=$(echo "$CHANGED" | grep -iE "(auth|security|token|jwt|oauth|encrypt|secret)" || true)
+          if [ -n "$SEC_CHANGES" ]; then
+            if ! echo "$CHANGED" | grep -q "docs/security.md"; then
+              WARNINGS="${WARNINGS}\n⚠️ Security-related changes detected but \`docs/security.md\` was not updated. Verify if needed."
+            fi
+          fi
+
+          # Check 4: service-map.md staleness (uses python3 for cross-platform date math)
+          if [ -f "docs/service-map.md" ]; then
+            LAST_VERIFIED=$(grep -oP 'Last verified: \K\d{4}-\d{2}-\d{2}' docs/service-map.md || echo "")
+            if [ -n "$LAST_VERIFIED" ]; then
+              DAYS_OLD=$(python3 -c "from datetime import date; print((date.today() - date.fromisoformat('$LAST_VERIFIED')).days)")
+              if [ "$DAYS_OLD" -gt 90 ]; then
+                WARNINGS="${WARNINGS}\n⚠️ \`docs/service-map.md\` last verified ${DAYS_OLD} days ago (max 90). Run \`/doc-review\`."
+              fi
+            fi
+          fi
+
+          # Output results
+          if [ -n "$WARNINGS" ]; then
+            echo "## 📚 Documentation Freshness" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo -e "$WARNINGS" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Run \`/doc-sync\` in Claude Code to update affected docs." >> $GITHUB_STEP_SUMMARY
+            echo -e "$WARNINGS"
+            echo "::warning::Documentation may need updating. See job summary."
+          else
+            echo "## 📚 Documentation Freshness" >> $GITHUB_STEP_SUMMARY
+            echo "✅ No documentation updates needed." >> $GITHUB_STEP_SUMMARY
+            echo "✅ Documentation looks fresh."
+          fi

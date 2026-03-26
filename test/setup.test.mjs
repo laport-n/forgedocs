@@ -50,11 +50,19 @@ describe('setup.mjs', () => {
   afterAll(() => {
     if (originalConfig) {
       fs.writeFileSync(configPath, originalConfig)
+      // Rebuild content/ from the original config to clean up test symlinks
+      if (fs.existsSync(contentDir)) {
+        fs.rmSync(contentDir, { recursive: true })
+      }
       try {
         runSetup('--check')
       } catch {
         /* best effort */
       }
+    } else {
+      // No original config — clean up everything tests created
+      if (fs.existsSync(configPath)) fs.rmSync(configPath)
+      if (fs.existsSync(contentDir)) fs.rmSync(contentDir, { recursive: true })
     }
     cleanup(tempRepo)
   })

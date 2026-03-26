@@ -33,3 +33,14 @@
 - New CLI subcommand → update `ARCHITECTURE.md` + `README.md` CLI Reference
 - New Claude command template → update `README.md` commands table
 - Changed discovery logic → update `ARCHITECTURE.md` data flow
+
+## AI tools available (via MCP)
+The forgedocs MCP server (`forgedocs mcp`) exposes these tools:
+- `list_services` — list all tracked repos with doc status
+- `get_service_docs` — read any doc file from a tracked service
+- `search_docs` — full-text search across all documentation
+- `check_freshness` — check doc freshness and staleness
+- `get_health_score` — doc health score (0-100) with detailed breakdown
+- `get_codemap` — ARCHITECTURE.md codemap as structured JSON
+- `check_drift` — detect documentation drift vs filesystem
+- `suggest_updates` — prioritized actionable suggestions for improving docs

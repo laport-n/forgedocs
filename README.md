@@ -4,119 +4,93 @@
 [![CI](https://github.com/laport-n/forgedocs/actions/workflows/ci.yml/badge.svg)](https://github.com/laport-n/forgedocs/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Architecture documentation framework for codebases. Auto-discovers repos, renders docs with VitePress, and maintains them with AI-assisted commands that keep documentation in sync with code.
+**Architecture docs that stay in sync with your code.** Auto-discovered from your repos. Verified by invariant checks. Maintained by AI commands.
 
-**Documentation that proves it's accurate** — invariants are verified automatically, freshness is checked in CI, and AI agents read the docs at every session.
+Built for developers who want docs they can trust, and AI agents that actually understand the codebase.
 
-**[Live demo](https://laport-n.github.io/forgedocs/)** — see what a Forgedocs site looks like.
+**[See the live demo](https://laport-n.github.io/forgedocs/)**
 
-## Quick Start
-
-Try it instantly (no install):
+## Try it in 30 seconds
 
 ```bash
-npx forgedocs init
-npx forgedocs dev
+npx forgedocs init       # discovers your repos automatically
+npx forgedocs dev        # starts the doc site
 ```
 
-Or install globally:
+Open [localhost:5173](http://localhost:5173) — your architecture docs are live.
 
-```bash
-npm install -g forgedocs
-forgedocs init
-forgedocs dev
+## The problem
+
+Your repos have READMEs. But nobody can answer:
+
+- *"What does this service actually do and how is it organized?"*
+- *"What are the rules I should never break?"*
+- *"How do the services talk to each other?"*
+
+Docs exist in wikis, but they drifted months ago. AI agents hallucinate because they lack real context. New developers take weeks to onboard.
+
+## What Forgedocs does differently
+
+**Zero-config discovery** — Any repo with an `ARCHITECTURE.md` is detected. No manifest, no config file, no manual setup.
+
+**Docs live in your repos, not in wikis** — They're in the PR loop. They get reviewed with the code. They can't drift silently.
+
+**Invariants are verifiable** — Each rule in ARCHITECTURE.md includes a shell command that checks it. `/doc-review` executes them and reports pass/fail.
+
+**8 AI commands for Claude Code** — `/doc-init` generates everything from scratch. `/doc-sync` updates after changes. `/doc-review` audits quarterly. No manual markdown editing.
+
+**MCP server for Claude** — Claude queries your docs mid-task: search across repos, read any doc, check freshness. Your doc site becomes an active knowledge base.
+
+**CI freshness checks** — A GitHub Action warns on PRs when code changes need doc updates. No stale docs slipping through.
+
+## How it works
+
+Forgedocs **symlinks** your local repos into a unified [VitePress](https://vitepress.dev/) site. Nothing is copied, nothing to sync — hot-reload just works.
+
+```
+forgedocs/
+├── content/             ← symlinks (auto-created)
+│   ├── my-api/          → ~/projects/my-api/
+│   └── my-service/      → ~/projects/my-service/
+└── .vitepress/          ← auto-generates navigation, sidebar, search
 ```
 
-Open http://localhost:5173.
-
-## The Problem
-
-Services have READMEs covering setup and deployment, but nothing that answers:
-- "What does this service actually do and how is it organized?"
-- "What are the rules I should never break?"
-- "Why was this architectural decision made?"
-- "How do the services talk to each other?"
-
-This makes onboarding slow and AI agents lack context. When docs exist, nobody trusts them — they drift from the code within weeks.
-
-## The Approach: Progressive Disclosure
-
-Inspired by [matklad's ARCHITECTURE.md](https://matklad.github.io/2021/02/06/ARCHITECTURE.md.html) and [OpenAI's Harness Engineering](https://openai.com/index/harness-engineering/), Forgedocs uses **layered documentation** where agents and developers start with a narrow, stable entry point and follow pointers to deeper context.
+Documentation follows **progressive disclosure** — each layer is more detailed and less stable:
 
 ```
-CLAUDE.md          ← Table of contents. "Where to look", not "how to do everything". ~50 lines.
+CLAUDE.md          ← Where to look. ~50 lines.
     ↓
-ARCHITECTURE.md    ← The map. Codemap, data flow, verifiable invariants. ~100-150 lines.
+ARCHITECTURE.md    ← The map. Codemap, data flow, verifiable invariants.
     ↓
-docs/              ← Reference library. Glossary, security rules, service map, ADRs.
+docs/              ← Reference. Glossary, security, service map, ADRs.
     ↓
-docs/features/     ← Deep dives. Complex features with invariants and failure modes.
+docs/features/     ← Deep dives. Complex features with invariants.
     ↓
-code               ← The ultimate source of truth.
+code               ← The source of truth.
 ```
 
-Each layer is progressively more detailed and less stable. The key: **don't document what the code already says** — document the "why", the invariants, the cross-cutting rules, the vocabulary.
-
-## How It Works
-
-Forgedocs doesn't contain documentation itself. It **auto-discovers** your local repos and creates symlinks to their docs, then renders everything as a unified site with VitePress.
-
-```
-forgedocs/                 ← this tool
-├── content/               ← symlinks (gitignored, created by init)
-│   ├── my-api/            → ~/projects/my-api/
-│   └── my-service/        → ~/projects/my-service/
-└── .vitepress/            ← auto-generates navigation, sidebar, search
-```
-
-A repo is detected if it contains an `ARCHITECTURE.md` at its root.
-
-## CLI Reference
-
-```
-forgedocs <command> [options]
-```
-
-| Command | Description |
-|---------|-------------|
-| `forgedocs init` | Interactive setup — discover repos, create symlinks |
-| `forgedocs dev` | Start the local documentation dev server |
-| `forgedocs build` | Build static site in `.vitepress/dist/` |
-| `forgedocs preview` | Preview the built site |
-| `forgedocs add <path>` | Add a specific repo by path |
-| `forgedocs remove <name>` | Remove a repo from the site |
-| `forgedocs status` | Show status of all tracked repos |
-| `forgedocs install <path>` | Install Claude Code commands into a repo |
-| `forgedocs doctor` | Diagnose common issues |
-| `forgedocs mcp` | Start MCP server for Claude Code integration |
-| `forgedocs help` | Show help and list all commands |
-
-Options: `--verbose` / `-v` for debug output, `--json` for machine-readable output (on `status` and `doctor`), `--version`, `--help`.
+---
 
 ## Claude Code Commands
 
-Install into any repo with `forgedocs install ~/path/to/repo`, then use in Claude Code:
+Install into any repo with `forgedocs install ~/path/to/repo`:
 
 | Command | What it does | When to use |
 |---------|-------------|-------------|
-| `/doc-init` | Generates full documentation structure by exploring code | First time — bootstrapping a repo |
+| `/doc-init` | Generates full documentation structure by exploring code | Bootstrapping a new repo |
 | `/doc-feature` | Creates feature doc with invariants, preconditions, failure modes | After building a complex feature |
 | `/doc-sync` | Checks if docs need updating after code changes | After a PR that changes architecture |
 | `/doc-review` | Full audit — executes invariant checks, produces health report | Quarterly, or before a release |
 | `/doc-onboard` | Generates personalized reading path with estimated times | Onboarding a new developer |
-| `/doc-adr` | Creates a numbered ADR by researching the codebase and git history | After a significant architectural decision |
+| `/doc-adr` | Creates a numbered ADR by researching codebase and git history | After a significant architectural decision |
 | `/doc-pr` | Checks all PR changes against docs, proposes updates | Before merging a PR |
 | `/doc-ci` | Generates GitHub Actions workflow for doc freshness checks | Once per repo — CI setup |
 
-Also installs:
-- `.claude/skills/doc-review/SKILL.md` — automated review skill
-- `.github/workflows/doc-freshness.yml` — CI check for stale docs
+Also installs `.claude/skills/doc-review/SKILL.md` and `.github/workflows/doc-freshness.yml`.
 
-## MCP Server (Claude Code Integration)
+## MCP Server
 
-Forgedocs includes an MCP server that lets Claude query your documentation programmatically during coding sessions.
-
-Add to your Claude Code settings (`.claude/settings.json`):
+Claude can query your docs programmatically. Add to `.claude/settings.json`:
 
 ```json
 {
@@ -130,86 +104,39 @@ Add to your Claude Code settings (`.claude/settings.json`):
 }
 ```
 
-Available tools for Claude:
-- **`list_services`** — List all tracked repos with doc coverage metadata
-- **`get_service_docs`** — Read any doc from any service (architecture, features, ADRs, etc.)
-- **`search_docs`** — Full-text search across all documentation
-- **`check_freshness`** — Check for stale or missing documentation
+Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshness`
 
-This turns your doc site into an active knowledge base that Claude can query mid-task.
+## CLI Reference
 
-## Documentation Structure
+| Command | Description |
+|---------|-------------|
+| `forgedocs init` | Interactive setup — discover repos, create symlinks |
+| `forgedocs dev` | Start the documentation dev server |
+| `forgedocs build` | Build static site for deployment |
+| `forgedocs preview` | Preview the built site |
+| `forgedocs add <path>` | Add a specific repo by path |
+| `forgedocs remove <name>` | Remove a repo from the site |
+| `forgedocs status` | Show status of all tracked repos |
+| `forgedocs install <path>` | Install Claude Code commands into a repo |
+| `forgedocs doctor` | Diagnose common issues |
+| `forgedocs mcp` | Start MCP server for Claude Code |
 
-### Minimum (required)
-
-```
-my-service/
-├── ARCHITECTURE.md       ← Detection marker — codemap, invariants
-└── README.md             ← Shown as service home page
-```
-
-### Recommended
-
-```
-my-service/
-├── ARCHITECTURE.md       ← Codemap, data flow, verifiable invariants
-├── CLAUDE.md             ← AI agent entry point (conventions, anti-patterns)
-├── README.md             ← Setup, deployment, usage
-└── docs/
-    ├── glossary.md       ← Domain vocabulary
-    ├── service-map.md    ← Inter-service communication
-    ├── security.md       ← Security rules
-    ├── features/         ← One file per complex feature
-    │   └── my-feature.md
-    └── adr/              ← Architecture Decision Records
-        ├── README.md
-        └── 001-some-decision.md
-```
-
-The sidebar is generated automatically from whatever files exist.
-
-| File | Purpose | Sidebar Section |
-|------|---------|-----------------|
-| `README.md` | Service overview, setup | Home |
-| `ARCHITECTURE.md` | Codemap, data flow, invariants | Architecture |
-| `CLAUDE.md` | AI agent conventions | — (not shown) |
-| `docs/*.md` | Guides (glossary, security, etc.) | Guides |
-| `docs/features/*.md` | Feature documentation | Features |
-| `docs/adr/*.md` | Architecture Decision Records | ADRs |
-
-See [`examples/sample-repo/`](examples/sample-repo/) for a complete example.
-
-## Design Decisions
-
-**Docs in repos, not wikis.** Confluence drifts because it's not in the PR loop. Docs next to code get reviewed with the code.
-
-**`CLAUDE.md` is navigation, not description.** It says "business logic lives in `app/domains/`" — it doesn't explain each domain. That's ARCHITECTURE.md's job. Keeps CLAUDE.md small and stable.
-
-**Invariants are verifiable.** Each rule in ARCHITECTURE.md includes a shell command that checks it. `/doc-review` executes them and reports pass/fail.
-
-**Feature docs are on-demand.** Most code doesn't need a feature doc. `/doc-feature` generates them for genuinely complex features by exploring the code.
-
-**The site is a viewer, not a source of truth.** It symlinks to real repos. Docs are always current, hot-reload works, there's nothing to sync.
+Options: `--verbose` · `--json` (on `status` and `doctor`) · `--version` · `--help`
 
 ## Configuration
 
-Customize via `docsite.config.mjs`:
-
 ```js
+// docsite.config.mjs
 export default {
   title: 'My Docs',
-  description: 'Architecture documentation',
   github: 'https://github.com/my-org',
   scanDirs: ['~/projects', '~/work'],
   nestedDirs: ['packages', 'services', 'apps'],
-  maxDepth: 3,                                    // how deep to scan for repos (default: 3)
-  extraExcludes: ['content/*/my-custom-dir/**'],
+  maxDepth: 3,
 }
 ```
 
-### `.repos.json`
-
-The repo registry is stored as `.repos.json` in your working directory. It maps repo names to absolute paths:
+Repo registry (`.repos.json`) maps names to paths — managed by `init`/`add`/`remove`, or edit manually:
 
 ```json
 {
@@ -218,49 +145,49 @@ The repo registry is stored as `.repos.json` in your working directory. It maps 
 }
 ```
 
-This file is managed by `forgedocs init` / `add` / `remove`, but you can also edit it manually. Names must be valid directory names (they become symlink names in `content/`).
+## Documentation Structure
 
-## Documentation Lifecycle
+```
+my-service/
+├── ARCHITECTURE.md       ← Required — codemap, data flow, verifiable invariants
+├── CLAUDE.md             ← AI agent entry point (conventions, anti-patterns)
+├── README.md             ← Service home page (setup, deployment)
+└── docs/
+    ├── glossary.md       ← Domain vocabulary
+    ├── service-map.md    ← Inter-service communication
+    ├── security.md       ← Security rules
+    ├── features/         ← One file per complex feature
+    └── adr/              ← Architecture Decision Records
+```
 
-| When | What to do |
-|------|-----------|
-| **Every PR** | PR template checklist + CI freshness check (automatic) |
-| **After code changes** | `/doc-sync` — reads git diff, proposes updates |
-| **Quarterly** | `/doc-review` — audits all docs, executes invariant checks |
-| **New complex feature** | `/doc-feature` — generates structured feature doc |
-| **New team member** | `/doc-onboard` — personalized reading path |
+The sidebar is generated automatically from whatever files exist. Only `ARCHITECTURE.md` is required.
 
 ## Examples
 
-- [`examples/sample-repo/`](examples/sample-repo/) — Minimal single-service setup
-- [`examples/monorepo/`](examples/monorepo/) — Multi-service monorepo with Node.js + Python
+- [`examples/sample-repo/`](examples/sample-repo/) — Minimal single-service
+- [`examples/monorepo/`](examples/monorepo/) — Multi-service with Node.js + Python
 - [`examples/forgedocs-self/`](examples/forgedocs-self/) — Forgedocs documenting itself
 
 ## Community
 
-- [GitHub Discussions](https://github.com/laport-n/forgedocs/discussions) — Questions, ideas, show & tell
+- [Discussions](https://github.com/laport-n/forgedocs/discussions) — Questions, ideas, show & tell
 - [Issues](https://github.com/laport-n/forgedocs/issues) — Bug reports and feature requests
-
-**Using Forgedocs?** Open a [Show & Tell discussion](https://github.com/laport-n/forgedocs/discussions/categories/show-and-tell) — we'd love to see how you use it.
-
-## Requirements
-
-- **Node.js 20+**
-- One or more repos with an `ARCHITECTURE.md`
+- [Contributing](CONTRIBUTING.md) — How to contribute
 
 ## Troubleshooting
 
 Run `forgedocs doctor` to diagnose issues automatically.
 
-**`forgedocs dev` says "No repos configured"** — Run `forgedocs init` first.
+| Problem | Solution |
+|---------|----------|
+| "No repos configured" | Run `forgedocs init` |
+| Service doesn't appear | Check it has `ARCHITECTURE.md` at root |
+| Changes don't appear | Restart `forgedocs dev` |
+| Search misses content | Restart to re-index |
 
-**A service doesn't appear** — Check it has `ARCHITECTURE.md` at root. Run `forgedocs init` to refresh.
+## Requirements
 
-**Changes don't appear** — VitePress watches through symlinks. Restart `forgedocs dev` if needed.
-
-**New repo added but doesn't show** — After `forgedocs add`, restart the dev server. VitePress reads `content/` at startup.
-
-**Search doesn't find content** — Search index builds on startup. Restart to re-index.
+Node.js 20+ · One or more repos with `ARCHITECTURE.md`
 
 ## License
 

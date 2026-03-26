@@ -24,7 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - TypeScript types in `.vitepress/config.ts` (replaced `any` with proper VitePress types)
 
 ### Changed
-- **Renamed** from `docsite` to `@docforge/cli`
+- **Renamed** from `docsite` to `forgedocs`
 - Package version bumped to 0.3.0
 - Scripts refactored to use shared `lib/` modules
 - Repository URLs updated to `nlaporte/docforge`

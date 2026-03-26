@@ -7,7 +7,7 @@ Architecture documentation framework for codebases. Auto-discovers repos, render
 ## Quick Start
 
 ```bash
-npm install -g @docforge/cli
+npm install -g forgedocs
 docforge init
 docforge dev
 ```
@@ -183,7 +183,7 @@ export default {
 
 ## Requirements
 
-- **Node.js 18+**
+- **Node.js 20+**
 - One or more repos with an `ARCHITECTURE.md`
 
 ## Troubleshooting

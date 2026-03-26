@@ -7,7 +7,7 @@ Architecture documentation framework for codebases. Auto-discovers repos, render
 ## Quick Start
 
 ```bash
-npm install -g @docforge/cli
+npm install -g forgedocs
 docforge init
 docforge dev
 ```

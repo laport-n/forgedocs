@@ -27,7 +27,7 @@ features:
 ## Quick Start
 
 ```bash
-npm install -g @docforge/cli
+npm install -g forgedocs
 docforge init        # discover repos
 docforge dev         # start the doc server
 ```

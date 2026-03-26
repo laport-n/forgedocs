@@ -1,5 +1,5 @@
 {
-  "name": "@docforge/cli",
+  "name": "forgedocs",
   "version": "0.3.0",
   "description": "Architecture documentation framework for codebases. Auto-discovers repos, renders docs with VitePress, and maintains them with AI-assisted commands.",
   "type": "module",

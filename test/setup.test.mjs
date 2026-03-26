@@ -1,8 +1,8 @@
-import { describe, it, beforeAll, afterAll, expect } from 'vitest'
-import fs from 'node:fs'
-import path from 'node:path'
-import os from 'node:os'
 import { execFileSync } from 'node:child_process'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const SETUP_SCRIPT = path.join(ROOT, 'scripts', 'setup.mjs')
@@ -17,7 +17,11 @@ function createTempRepo(name) {
 
 function cleanup(...dirs) {
   for (const dir of dirs) {
-    try { fs.rmSync(dir, { recursive: true }) } catch { /* ignore */ }
+    try {
+      fs.rmSync(dir, { recursive: true })
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -46,7 +50,11 @@ describe('setup.mjs', () => {
   afterAll(() => {
     if (originalConfig) {
       fs.writeFileSync(configPath, originalConfig)
-      try { runSetup('--check') } catch { /* best effort */ }
+      try {
+        runSetup('--check')
+      } catch {
+        /* best effort */
+      }
     }
     cleanup(tempRepo)
   })
@@ -91,7 +99,7 @@ describe('setup.mjs', () => {
   })
 
   it('--check fails without .repos.json', () => {
-    const tempConfig = configPath + '.bak'
+    const tempConfig = `${configPath}.bak`
     if (fs.existsSync(configPath)) {
       fs.renameSync(configPath, tempConfig)
     }

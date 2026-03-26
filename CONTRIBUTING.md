@@ -1,94 +1,104 @@
-# Contributing to Docsite
+# Contributing to Docforge
 
-Thanks for your interest in contributing! Docsite is an open-source tool for generating and maintaining architecture documentation that works for both humans and AI agents.
+Thanks for your interest in contributing! Docforge is an open-source architecture documentation framework for codebases.
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
-- At least one local repository with an `ARCHITECTURE.md` at its root (or create one to test)
+- A local repository with an `ARCHITECTURE.md` at its root (or create one to test)
 
 ### Development Setup
 
 ```bash
-git clone https://github.com/nlaporte/docsite.git
-cd docsite
+git clone https://github.com/nlaporte/docforge.git
+cd docforge
 npm install
 
-# Create a test repo to work with
-mkdir -p /tmp/test-repo && echo "# Test" > /tmp/test-repo/ARCHITECTURE.md && echo "# Test" > /tmp/test-repo/README.md
-npm run setup -- --add /tmp/test-repo
+# Create a test repo
+mkdir -p /tmp/test-repo
+echo "# Test" > /tmp/test-repo/ARCHITECTURE.md
+echo "# Test" > /tmp/test-repo/README.md
 
-npm run docs
+npx docforge add /tmp/test-repo
+npx docforge dev
 # Open http://localhost:5173
 ```
 
 ### Running Tests
 
 ```bash
-npm test
+npm test                # run tests
+npm run test:coverage   # run tests with coverage
+npm run lint            # check lint
+npm run lint:fix        # auto-fix lint issues
 ```
 
 ## How to Contribute
 
 ### Reporting Bugs
 
-Open a [GitHub Issue](https://github.com/nlaporte/docsite/issues/new) with:
-- Steps to reproduce
-- Expected vs actual behavior
-- Your OS, Node.js version, and shell
+Open a [GitHub Issue](https://github.com/nlaporte/docforge/issues/new?template=bug_report.yml) with steps to reproduce, expected vs actual behavior, and your environment (OS, Node.js version).
 
 ### Suggesting Features
 
-Open a GitHub Issue with the `enhancement` label. Describe:
-- The problem you're trying to solve
-- Your proposed solution
-- Any alternatives you considered
+Open a [GitHub Issue](https://github.com/nlaporte/docforge/issues/new?template=feature_request.yml) describing the problem and your proposed solution.
 
 ### Submitting Code
 
 1. Fork the repo and create a branch from `main`
 2. Make your changes
 3. Add tests if applicable
-4. Ensure `npm test` passes
+4. Ensure `npm test` and `npm run lint` pass
 5. Open a Pull Request
 
 ### PR Guidelines
 
 - Keep PRs focused — one feature or fix per PR
 - Update documentation if your change affects user-facing behavior
-- Follow the existing code style (no config file yet — just match what's there)
+- Follow the existing code style (enforced by Biome)
 
 ## Architecture
 
 ```
-docsite/
-├── .vitepress/config.ts    ← VitePress config with dynamic sidebar generation
+docforge/
+├── bin/
+│   └── docforge.mjs         ← CLI entry point (docforge init, dev, install, etc.)
+├── lib/
+│   ├── config.mjs            ← Configuration loading and validation
+│   ├── discovery.mjs          ← Repository scanning and detection
+│   ├── installer.mjs          ← Template installation into target repos
+│   ├── linker.mjs             ← Symlink/junction/copy management
+│   └── utils.mjs              ← Shared utilities (expandHome, formatServiceName, debug)
 ├── scripts/
-│   ├── setup.mjs           ← Repo auto-discovery and symlink management
-│   └── install-commands.mjs ← Copies Claude Code commands into target repos
+│   ├── setup.mjs              ← Legacy setup script (kept for npm run compatibility)
+│   └── install-commands.mjs   ← Legacy install script
 ├── templates/
-│   ├── claude-commands/     ← Command templates (doc-init, doc-feature, etc.)
-│   └── claude-skills/       ← Skill templates (doc-review)
-├── docsite.config.mjs       ← User configuration (title, GitHub URL, scan dirs)
-├── index.md                 ← Landing page
-└── content/                 ← Symlinks to local repos (gitignored)
+│   ├── claude-commands/       ← Command templates (doc-init, doc-feature, etc.)
+│   ├── claude-skills/         ← Skill templates (doc-review)
+│   └── github-workflows/     ← CI workflow templates
+├── .vitepress/config.ts       ← VitePress config with dynamic sidebar generation
+├── test/                      ← Vitest test suite
+├── examples/sample-repo/      ← Example repo with full doc structure
+├── docsite.config.mjs         ← User configuration
+└── content/                   ← Symlinks to local repos (gitignored)
 ```
 
 ### Key Design Decisions
 
-- **Symlinks, not copies**: `content/` contains symlinks to real repos, so docs are always up to date and hot-reload works
+- **Symlinks, not copies**: `content/` contains symlinks to real repos, so docs are always current and hot-reload works
 - **Dynamic everything**: Sidebar, nav, and rewrites are generated at startup by scanning `content/`
 - **No hardcoded services**: Any repo with `ARCHITECTURE.md` works
-- **Config file**: `docsite.config.mjs` lets users customize without modifying source
+- **Modular `lib/`**: Core logic is in testable modules, CLI and scripts are thin wrappers
+- **Zero runtime dependencies**: Only VitePress (dev) — everything else uses Node.js built-ins
 
 ## Code Style
 
 - ES modules (`import`/`export`)
-- Node.js built-in modules only (no external dependencies beyond VitePress)
-- Clear console output with emoji for interactive scripts
-- Graceful failures (catch and continue, don't crash)
+- Enforced by [Biome](https://biomejs.dev/) — run `npm run lint:fix` to auto-format
+- Node.js built-in modules only (no external runtime dependencies)
+- Graceful failures with `--verbose` flag for debug output
 
 ## License
 

@@ -1,18 +1,18 @@
 /**
- * Docsite configuration.
+ * Docforge configuration.
  *
  * Customize this file to match your organization.
  * All fields are optional — sensible defaults are used when omitted.
  */
 export default {
   /** Site title shown in the header and browser tab */
-  title: 'Docsite',
+  title: 'Docforge',
 
   /** Site description for SEO and metadata */
   description: 'Architecture documentation for your services',
 
   /** GitHub organization or user URL (shown as social link) */
-  github: 'https://github.com/nlaporte/docsite',
+  github: 'https://github.com/nlaporte/docforge',
 
   /**
    * Additional directories to scan for repos during setup.

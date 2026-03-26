@@ -1,22 +1,15 @@
-import { describe, it, beforeAll, afterAll, expect } from 'vitest'
-import fs from 'node:fs'
-import path from 'node:path'
-import os from 'node:os'
 import { execFileSync } from 'node:child_process'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const INSTALL_SCRIPT = path.join(ROOT, 'scripts', 'install-commands.mjs')
 
-const EXPECTED_COMMANDS = [
-  'doc-init.md',
-  'doc-feature.md',
-  'doc-sync.md',
-  'doc-review.md',
-]
+const EXPECTED_COMMANDS = ['doc-init.md', 'doc-feature.md', 'doc-sync.md', 'doc-review.md']
 
-const EXPECTED_SKILLS = [
-  'doc-review',
-]
+const EXPECTED_SKILLS = ['doc-review']
 
 function createTempRepo() {
   const dir = path.join(os.tmpdir(), `docsite-test-install-${Date.now()}`)
@@ -26,7 +19,11 @@ function createTempRepo() {
 }
 
 function cleanup(dir) {
-  try { fs.rmSync(dir, { recursive: true }) } catch { /* ignore */ }
+  try {
+    fs.rmSync(dir, { recursive: true })
+  } catch {
+    /* ignore */
+  }
 }
 
 function runInstall(...args) {
@@ -85,10 +82,7 @@ describe('install-commands.mjs', () => {
 
   it('installed commands are valid markdown', () => {
     for (const cmd of EXPECTED_COMMANDS) {
-      const content = fs.readFileSync(
-        path.join(tempRepo, '.claude', 'commands', cmd),
-        'utf-8'
-      )
+      const content = fs.readFileSync(path.join(tempRepo, '.claude', 'commands', cmd), 'utf-8')
       expect(content).toMatch(/^# \/doc-/)
       expect(content.length).toBeGreaterThan(100)
     }

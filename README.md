@@ -10,6 +10,16 @@ Built for developers who want docs they can trust, and AI agents that actually u
 
 **[See the live demo](https://laport-n.github.io/forgedocs/)**
 
+## Philosophy
+
+Forgedocs stands on two ideas:
+
+**[matklad's ARCHITECTURE.md](https://matklad.github.io/2021/02/06/ARCHITECTURE.md.html)** — Every repo deserves a high-level map: what the modules are, how data flows, and what rules must never be broken. A short document that a new developer (or an AI agent) reads first and revisits rarely. Not a manual — a map.
+
+**[OpenAI's Harness Engineering](https://openai.com/index/building-an-ai-native-engineering-culture/)** — Documentation isn't just for humans anymore. When AI agents code alongside you, the quality of your docs directly determines the quality of their output. CLAUDE.md, verifiable invariants, and structured MCP tools exist so that agents don't hallucinate — they navigate.
+
+Forgedocs is the tooling that makes both ideas practical: scaffold the docs, verify they stay true, and expose them to AI agents as structured data.
+
 ## Try it in 30 seconds
 
 ```bash
@@ -122,7 +132,7 @@ Claude can query your docs programmatically. Add to `.claude/settings.json`:
 }
 ```
 
-Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshness`
+Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshness` · `get_health_score` · `get_codemap` · `check_drift` · `suggest_updates`
 
 ## CLI Reference
 

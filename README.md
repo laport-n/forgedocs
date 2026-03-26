@@ -1,8 +1,13 @@
 # Forgedocs
 
+[![npm version](https://img.shields.io/npm/v/forgedocs)](https://www.npmjs.com/package/forgedocs)
+[![CI](https://github.com/laport-n/forgedocs/actions/workflows/ci.yml/badge.svg)](https://github.com/laport-n/forgedocs/actions/workflows/ci.yml)
+
 Architecture documentation framework for codebases. Auto-discovers repos, renders docs with VitePress, and maintains them with AI-assisted commands that keep documentation in sync with code.
 
 **Documentation that proves it's accurate** — invariants are verified automatically, freshness is checked in CI, and AI agents read the docs at every session.
+
+**[Live demo](https://laport-n.github.io/forgedocs/)** — see what a Forgedocs site looks like.
 
 ## Quick Start
 

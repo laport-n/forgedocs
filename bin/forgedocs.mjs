@@ -128,7 +128,10 @@ async function cmdInit() {
         console.log(`  Added: ${name}`)
       }
     } else if (answer) {
-      const indices = answer.split(',').map((s) => Number.parseInt(s.trim(), 10)).filter((n) => !Number.isNaN(n))
+      const indices = answer
+        .split(',')
+        .map((s) => Number.parseInt(s.trim(), 10))
+        .filter((n) => !Number.isNaN(n))
       for (const idx of indices) {
         if (idx >= 1 && idx <= entries.length) {
           const [name, repoPath] = entries[idx - 1]

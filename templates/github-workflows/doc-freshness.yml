@@ -59,11 +59,11 @@ jobs:
             fi
           fi
 
-          # Check 4: service-map.md staleness
+          # Check 4: service-map.md staleness (uses python3 for cross-platform date math)
           if [ -f "docs/service-map.md" ]; then
             LAST_VERIFIED=$(grep -oP 'Last verified: \K\d{4}-\d{2}-\d{2}' docs/service-map.md || echo "")
             if [ -n "$LAST_VERIFIED" ]; then
-              DAYS_OLD=$(( ($(date +%s) - $(date -d "$LAST_VERIFIED" +%s)) / 86400 ))
+              DAYS_OLD=$(python3 -c "from datetime import date; print((date.today() - date.fromisoformat('$LAST_VERIFIED')).days)")
               if [ "$DAYS_OLD" -gt 90 ]; then
                 WARNINGS="${WARNINGS}\n⚠️ \`docs/service-map.md\` last verified ${DAYS_OLD} days ago (max 90). Run \`/doc-review\`."
               fi

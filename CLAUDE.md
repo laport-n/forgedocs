@@ -7,12 +7,12 @@
 
 ## Where things live
 - `bin/forgedocs.mjs` — CLI entry point, all subcommands
-- `lib/` — core modules (config, discovery, linker, installer, utils)
-- `templates/` — Claude Code commands, skills, CI workflows installed into target repos
-- `.vitepress/config.ts` — VitePress configuration with dynamic sidebar generation
+- `lib/` — core modules (config, discovery, linker, installer, mcp-server, utils)
+- `templates/` — Claude Code commands (8), skills, CI workflows installed into target repos
+- `.vitepress/` — VitePress config split into modules (config, discovery, rewrites, sidebar, utils)
 - `scripts/` — legacy npm run scripts (thin wrappers around lib/)
 - `test/` — Vitest test suite
-- `examples/sample-repo/` — complete example of expected repo structure
+- `examples/` — sample-repo, monorepo, and forgedocs-self examples
 
 ## What to never do
 - Never add runtime dependencies beyond VitePress — the tool must stay lightweight

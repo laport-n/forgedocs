@@ -1,6 +1,6 @@
 {
   "name": "forgedocs",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Architecture documentation framework for codebases. Auto-discovers repos, renders docs with VitePress, and maintains them with AI-assisted commands.",
   "type": "module",
   "license": "MIT",
@@ -56,7 +56,6 @@
     "format": "biome format --write ."
   },
   "dependencies": {
-    "forgedocs": "^0.3.3",
     "vitepress": "^1.6.3"
   },
   "devDependencies": {

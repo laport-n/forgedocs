@@ -14,6 +14,8 @@ hero:
       link: https://github.com/laport-n/forgedocs
 
 features:
+  - title: MCP Server for Claude
+    details: "Claude queries your docs mid-task via MCP — search across repos, read any doc, check freshness. Your doc site becomes an active knowledge base."
   - title: Verifiable Invariants
     details: "Each architectural rule includes a check command. /doc-review executes them and reports pass/fail — documentation that proves it's correct."
   - title: AI Agent-Aware
@@ -22,6 +24,8 @@ features:
     details: "GitHub Action warns on PRs when structural changes need doc updates. No stale docs slipping through."
   - title: Auto-Discovery
     details: "Any repo with an ARCHITECTURE.md is detected. Hot-reload, full-text search, dynamic sidebar — no config needed."
+  - title: 8 Claude Commands
+    details: "/doc-init, /doc-review, /doc-sync, /doc-feature, /doc-adr, /doc-pr, /doc-onboard, /doc-ci — generate, audit, and maintain docs from Claude Code."
 ---
 
 ## Quick Start
@@ -96,6 +100,7 @@ The sidebar is generated automatically from whatever files exist — no manual c
 | `forgedocs status` | Show tracked repos and their doc coverage |
 | `forgedocs install <path>` | Install Claude Code commands into a repo |
 | `forgedocs doctor` | Diagnose common issues |
+| `forgedocs mcp` | Start MCP server for Claude Code integration |
 | `forgedocs help` | Show help and list all commands |
 
 ## Claude Code Commands
@@ -109,6 +114,8 @@ Installed into your repo via `forgedocs install` — available in any Claude Cod
 | `/doc-sync` | Checks if docs need updating after code changes | After a PR that changes architecture |
 | `/doc-review` | Full audit — executes invariant checks, compares docs against code | Quarterly, or before a release |
 | `/doc-onboard` | Generates personalized reading path with estimated times | Onboarding a new developer |
+| `/doc-adr` | Creates a numbered ADR by researching codebase and git history | After a significant architectural decision |
+| `/doc-pr` | Checks all PR changes against docs, proposes updates | Before merging a PR |
 | `/doc-ci` | Generates GitHub Actions workflow for doc freshness checks | Once per repo — CI setup |
 
 ### Feature docs convention

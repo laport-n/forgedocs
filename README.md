@@ -2,6 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/forgedocs)](https://www.npmjs.com/package/forgedocs)
 [![CI](https://github.com/laport-n/forgedocs/actions/workflows/ci.yml/badge.svg)](https://github.com/laport-n/forgedocs/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Architecture documentation framework for codebases. Auto-discovers repos, renders docs with VitePress, and maintains them with AI-assisted commands that keep documentation in sync with code.
 
@@ -11,6 +12,15 @@ Architecture documentation framework for codebases. Auto-discovers repos, render
 
 ## Quick Start
 
+Try it instantly (no install):
+
+```bash
+npx forgedocs init
+npx forgedocs dev
+```
+
+Or install globally:
+
 ```bash
 npm install -g forgedocs
 forgedocs init
@@ -18,16 +28,6 @@ forgedocs dev
 ```
 
 Open http://localhost:5173.
-
-Or without global install:
-
-```bash
-git clone https://github.com/laport-n/forgedocs.git
-cd forgedocs
-npm install
-npx forgedocs init
-npx forgedocs dev
-```
 
 ## The Problem
 
@@ -88,9 +88,10 @@ forgedocs <command> [options]
 | `forgedocs status` | Show status of all tracked repos |
 | `forgedocs install <path>` | Install Claude Code commands into a repo |
 | `forgedocs doctor` | Diagnose common issues |
+| `forgedocs mcp` | Start MCP server for Claude Code integration |
 | `forgedocs help` | Show help and list all commands |
 
-Options: `--verbose` / `-v` for debug output, `--version`, `--help`.
+Options: `--verbose` / `-v` for debug output, `--json` for machine-readable output (on `status` and `doctor`), `--version`, `--help`.
 
 ## Claude Code Commands
 
@@ -103,11 +104,39 @@ Install into any repo with `forgedocs install ~/path/to/repo`, then use in Claud
 | `/doc-sync` | Checks if docs need updating after code changes | After a PR that changes architecture |
 | `/doc-review` | Full audit — executes invariant checks, produces health report | Quarterly, or before a release |
 | `/doc-onboard` | Generates personalized reading path with estimated times | Onboarding a new developer |
+| `/doc-adr` | Creates a numbered ADR by researching the codebase and git history | After a significant architectural decision |
+| `/doc-pr` | Checks all PR changes against docs, proposes updates | Before merging a PR |
 | `/doc-ci` | Generates GitHub Actions workflow for doc freshness checks | Once per repo — CI setup |
 
 Also installs:
 - `.claude/skills/doc-review/SKILL.md` — automated review skill
 - `.github/workflows/doc-freshness.yml` — CI check for stale docs
+
+## MCP Server (Claude Code Integration)
+
+Forgedocs includes an MCP server that lets Claude query your documentation programmatically during coding sessions.
+
+Add to your Claude Code settings (`.claude/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "forgedocs": {
+      "command": "forgedocs",
+      "args": ["mcp"],
+      "cwd": "/path/to/your/docsite"
+    }
+  }
+}
+```
+
+Available tools for Claude:
+- **`list_services`** — List all tracked repos with doc coverage metadata
+- **`get_service_docs`** — Read any doc from any service (architecture, features, ADRs, etc.)
+- **`search_docs`** — Full-text search across all documentation
+- **`check_freshness`** — Check for stale or missing documentation
+
+This turns your doc site into an active knowledge base that Claude can query mid-task.
 
 ## Documentation Structure
 
@@ -173,9 +202,23 @@ export default {
   github: 'https://github.com/my-org',
   scanDirs: ['~/projects', '~/work'],
   nestedDirs: ['packages', 'services', 'apps'],
+  maxDepth: 3,                                    // how deep to scan for repos (default: 3)
   extraExcludes: ['content/*/my-custom-dir/**'],
 }
 ```
+
+### `.repos.json`
+
+The repo registry is stored as `.repos.json` in your working directory. It maps repo names to absolute paths:
+
+```json
+{
+  "my-api": "/Users/you/projects/my-api",
+  "my-service": "/Users/you/projects/my-service"
+}
+```
+
+This file is managed by `forgedocs init` / `add` / `remove`, but you can also edit it manually. Names must be valid directory names (they become symlink names in `content/`).
 
 ## Documentation Lifecycle
 
@@ -186,6 +229,19 @@ export default {
 | **Quarterly** | `/doc-review` — audits all docs, executes invariant checks |
 | **New complex feature** | `/doc-feature` — generates structured feature doc |
 | **New team member** | `/doc-onboard` — personalized reading path |
+
+## Examples
+
+- [`examples/sample-repo/`](examples/sample-repo/) — Minimal single-service setup
+- [`examples/monorepo/`](examples/monorepo/) — Multi-service monorepo with Node.js + Python
+- [`examples/forgedocs-self/`](examples/forgedocs-self/) — Forgedocs documenting itself
+
+## Community
+
+- [GitHub Discussions](https://github.com/laport-n/forgedocs/discussions) — Questions, ideas, show & tell
+- [Issues](https://github.com/laport-n/forgedocs/issues) — Bug reports and feature requests
+
+**Using Forgedocs?** Open a [Show & Tell discussion](https://github.com/laport-n/forgedocs/discussions/categories/show-and-tell) — we'd love to see how you use it.
 
 ## Requirements
 
@@ -201,6 +257,8 @@ Run `forgedocs doctor` to diagnose issues automatically.
 **A service doesn't appear** — Check it has `ARCHITECTURE.md` at root. Run `forgedocs init` to refresh.
 
 **Changes don't appear** — VitePress watches through symlinks. Restart `forgedocs dev` if needed.
+
+**New repo added but doesn't show** — After `forgedocs add`, restart the dev server. VitePress reads `content/` at startup.
 
 **Search doesn't find content** — Search index builds on startup. Restart to re-index.
 

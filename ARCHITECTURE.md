@@ -8,11 +8,17 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 
 | Module | Path | Purpose |
 |--------|------|---------|
-| CLI | `bin/forgedocs.mjs` | Entry point — routes subcommands (init, dev, build, add, remove, status, install, doctor, mcp) |
-| Config | `lib/config.mjs` | Loads `docsite.config.mjs` with defaults, validates `.repos.json` |
+| CLI | `bin/forgedocs.mjs` | Entry point — routes subcommands (init, quickstart, dev, build, add, remove, status, score, badge, diff, export, watch, install, doctor, mcp) |
+| Config | `lib/config.mjs` | Loads `docsite.config.mjs` with defaults (incl. plugins), validates `.repos.json` |
 | Discovery | `lib/discovery.mjs` | Recursive filesystem scan for repos with `ARCHITECTURE.md`, auto-detects common dirs |
 | Linker | `lib/linker.mjs` | Creates symlinks/junctions/copies in `content/`, with circular symlink detection |
 | Installer | `lib/installer.mjs` | Copies Claude commands, skills, and CI workflows into target repos |
+| Quickstart | `lib/quickstart.mjs` | Stack detection, scaffold generation (ARCHITECTURE.md, docs/), preset support (9 stacks) |
+| Health | `lib/health.mjs` | Doc health score calculation (0–100), SVG badge generation, terminal report formatting |
+| Diff | `lib/diff.mjs` | Drift detection — parses ARCHITECTURE.md codemap/invariants, compares with filesystem |
+| Export | `lib/export.mjs` | Export docs as JSON or self-contained HTML (with inline CSS and markdown-to-HTML conversion) |
+| Watch | `lib/watch.mjs` | File watcher daemon using `fs.watch` — detects directory/config/doc changes across repos |
+| Plugins | `lib/plugins.mjs` | Lightweight plugin system — hooks for pages, sidebar items, discovery, and build |
 | MCP Server | `lib/mcp-server.mjs` | JSON-RPC 2.0 over stdio — exposes doc search, read, and freshness tools for AI agents |
 | Utils | `lib/utils.mjs` | `expandHome()`, `formatServiceName()`, `debug()` logging |
 | VitePress Discovery | `.vitepress/discovery.ts` | Discovers services from `content/` symlinks, resolves allowed dirs |
@@ -21,6 +27,9 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 | VitePress Utils | `.vitepress/utils.ts` | Shared helpers: `debug()`, `formatServiceName()` |
 | VitePress Config | `.vitepress/config.ts` | Orchestrator — imports modules above, defines VitePress config |
 | Templates | `templates/` | Claude Code commands (8), skills, and GitHub Actions workflow templates |
+| VS Code Extension | `extensions/vscode/` | Status bar health score, sidebar doc browser, drift detection, quick navigation |
+| Scripts | `scripts/` | Legacy npm run scripts (thin wrappers around lib/) |
+| Examples | `examples/` | Sample repos: single-service, monorepo, forgedocs-self |
 
 ## Data Flow
 

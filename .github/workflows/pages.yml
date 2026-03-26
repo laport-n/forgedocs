@@ -29,10 +29,15 @@ jobs:
 
       - name: Setup demo content
         run: |
-          mkdir -p content
-          ln -s "$GITHUB_WORKSPACE/examples/forgedocs-self" content/forgedocs
+          mkdir -p content/forgedocs/docs
+          # Copy real repo docs (not stale example) — copy avoids circular symlinks
+          cp "$GITHUB_WORKSPACE/ARCHITECTURE.md" content/forgedocs/ARCHITECTURE.md
+          cp "$GITHUB_WORKSPACE/README.md" content/forgedocs/README.md
+          cp "$GITHUB_WORKSPACE/CLAUDE.md" content/forgedocs/CLAUDE.md
+          cp -r "$GITHUB_WORKSPACE/docs/"* content/forgedocs/docs/
+          # Keep sample-repo as a demo of a documented service
           ln -s "$GITHUB_WORKSPACE/examples/sample-repo" content/sample-repo
-          echo '{"forgedocs":"'$GITHUB_WORKSPACE'/examples/forgedocs-self","sample-repo":"'$GITHUB_WORKSPACE'/examples/sample-repo"}' > .repos.json
+          echo '{"forgedocs":"content/forgedocs","sample-repo":"'$GITHUB_WORKSPACE'/examples/sample-repo"}' > .repos.json
 
       - name: Build VitePress
         env:

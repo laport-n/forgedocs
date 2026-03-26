@@ -6,7 +6,7 @@ Thanks for your interest in contributing! Docforge is an open-source architectur
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - A local repository with an `ARCHITECTURE.md` at its root (or create one to test)
 
 ### Development Setup

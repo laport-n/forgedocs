@@ -183,7 +183,7 @@ export default {
 
 ## Requirements
 
-- **Node.js 18+**
+- **Node.js 20+**
 - One or more repos with an `ARCHITECTURE.md`
 
 ## Troubleshooting

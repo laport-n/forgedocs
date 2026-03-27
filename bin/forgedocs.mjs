@@ -81,7 +81,7 @@ function ensureVitepressFiles() {
   fs.mkdirSync(vpDir, { recursive: true })
 
   // Symlink all .vitepress modules from forgedocs (always refresh to track installed version)
-  for (const mod of ['config.ts', 'discovery.ts', 'rewrites.ts', 'sidebar.ts', 'utils.ts']) {
+  for (const mod of ['config.mts', 'discovery.ts', 'rewrites.ts', 'sidebar.ts', 'utils.ts']) {
     const dest = path.join(vpDir, mod)
     const src = path.join(PKG_ROOT, '.vitepress', mod)
     fs.rmSync(dest, { force: true })

@@ -26,7 +26,7 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 | VitePress Rewrites | `.vitepress/rewrites.ts` | Generates URL rewrites (README.md → index.md, etc.) |
 | VitePress Sidebar | `.vitepress/sidebar.ts` | Dynamic sidebar generation per service (main, guides, features, ADRs) |
 | VitePress Utils | `.vitepress/utils.ts` | Shared helpers: `debug()`, `formatServiceName()` |
-| VitePress Config | `.vitepress/config.ts` | Orchestrator — imports modules above, defines VitePress config |
+| VitePress Config | `.vitepress/config.mts` | Orchestrator — imports modules above, defines VitePress config |
 | Templates | `templates/` | Claude Code commands (8), skills, and GitHub Actions workflow templates |
 | VS Code Extension | `extensions/vscode/` | Status bar health score, sidebar doc browser, drift detection, quick navigation |
 | Scripts | `scripts/` | Legacy npm run scripts (thin wrappers around lib/) |
@@ -40,12 +40,12 @@ User runs `forgedocs init`
   → Presents interactive selection (numbered list)
   → User picks repos → saved to .repos.json
   → lib/linker.mjs creates symlinks: content/<name> → /path/to/repo (with circular detection)
-  → Copies .vitepress/config.ts and index.md to CWD
+  → lib/linker.mjs creates content/ symlinks in PKG_ROOT (no files in user repo)
 
 User runs `forgedocs dev`
   → Reads .repos.json, verifies symlinks
   → Starts VitePress dev server
-  → .vitepress/config.ts orchestrates:
+  → .vitepress/config.mts orchestrates:
       → discovery.ts discovers services from content/ symlinks
       → rewrites.ts generates URL rewrites (README.md → index.md, etc.)
       → sidebar.ts generates sidebar per service (main, guides, features, ADRs)

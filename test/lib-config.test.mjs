@@ -17,25 +17,11 @@ describe('config', () => {
   })
 
   describe('loadConfig()', () => {
-    it('returns defaults when no config file exists', async () => {
-      const config = await loadConfig(tempDir)
+    it('returns defaults', () => {
+      const config = loadConfig()
       expect(config.scanDirs).toBeDefined()
       expect(config.nestedDirs).toContain('services')
-      expect(config.title).toBe('Forgedocs')
-    })
-
-    it('merges user config with defaults', async () => {
-      const configDir = path.join(tempDir, 'with-config')
-      fs.mkdirSync(configDir, { recursive: true })
-      fs.writeFileSync(
-        path.join(configDir, 'docsite.config.mjs'),
-        'export default { title: "My Docs", extraExcludes: ["foo/**"] }\n',
-      )
-      const config = await loadConfig(configDir)
-      expect(config.title).toBe('My Docs')
-      expect(config.extraExcludes).toEqual(['foo/**'])
-      // Defaults still present
-      expect(config.nestedDirs).toContain('services')
+      expect(config.maxDepth).toBe(3)
     })
   })
 

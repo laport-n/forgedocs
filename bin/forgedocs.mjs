@@ -10,12 +10,12 @@ import { linkRepos } from '../lib/linker.mjs'
 import { startMcpServer } from '../lib/mcp-server.mjs'
 import { expandHome } from '../lib/utils.mjs'
 
-// PKG_ROOT = where forgedocs is installed (templates, vitepress config, node_modules)
-// CWD = where the user runs the command (repos.json, content/, docsite.config.mjs)
+// PKG_ROOT = where forgedocs is installed (templates, vitepress config, node_modules, data)
+// CWD = where the user runs the command (used only for scanning/resolving repo paths)
 const PKG_ROOT = path.dirname(path.dirname(new URL(import.meta.url).pathname))
 const CWD = process.cwd()
-const CONFIG_PATH = path.join(CWD, '.repos.json')
-const CONTENT_DIR = path.join(CWD, 'content')
+const CONFIG_PATH = path.join(PKG_ROOT, '.repos.json')
+const CONTENT_DIR = path.join(PKG_ROOT, 'content')
 const TEMPLATES_DIR = path.join(PKG_ROOT, 'templates')
 
 const VERSION = JSON.parse(fs.readFileSync(path.join(PKG_ROOT, 'package.json'), 'utf-8')).version
@@ -75,38 +75,8 @@ function ask(question) {
   })
 }
 
-/** Ensure VitePress config and index.md exist in CWD (copy from package if needed) */
-function ensureVitepressFiles() {
-  const vpDir = path.join(CWD, '.vitepress')
-  fs.mkdirSync(vpDir, { recursive: true })
-
-  // Copy config.ts (users may customize it)
-  const configDest = path.join(vpDir, 'config.ts')
-  if (!fs.existsSync(configDest)) {
-    fs.copyFileSync(path.join(PKG_ROOT, '.vitepress', 'config.ts'), configDest)
-  }
-
-  // Symlink supporting modules so they resolve from CWD's .vitepress/
-  for (const mod of ['discovery.ts', 'rewrites.ts', 'sidebar.ts', 'utils.ts']) {
-    const dest = path.join(vpDir, mod)
-    const src = path.join(PKG_ROOT, '.vitepress', mod)
-    // Always refresh symlinks to track the installed forgedocs version
-    fs.rmSync(dest, { force: true })
-    fs.symlinkSync(src, dest)
-  }
-
-  const indexDest = path.join(CWD, 'index.md')
-  if (!fs.existsSync(indexDest)) {
-    fs.copyFileSync(path.join(PKG_ROOT, 'index.md'), indexDest)
-  }
-  const configMjsDest = path.join(CWD, 'docsite.config.mjs')
-  if (!fs.existsSync(configMjsDest)) {
-    fs.copyFileSync(path.join(PKG_ROOT, 'docsite.config.mjs'), configMjsDest)
-  }
-}
-
 async function cmdInit() {
-  const config = await loadConfig(CWD)
+  const config = loadConfig()
   const homeDir = (await import('node:os')).default.homedir()
 
   console.log('\nForgedocs Setup\n')
@@ -194,9 +164,7 @@ async function cmdInit() {
   console.log(`\nConfig saved (${Object.keys(repos).length} repos)`)
 
   console.log('\nCreating links\n')
-  linkRepos(repos, CONTENT_DIR, CWD)
-
-  ensureVitepressFiles()
+  linkRepos(repos, CONTENT_DIR, PKG_ROOT)
 
   console.log('\nSetup complete! Run: forgedocs dev\n')
 }
@@ -259,24 +227,22 @@ Next steps:
 
 async function cmdDev() {
   await ensureSetup()
-  ensureVitepressFiles()
   const { execFileSync } = await import('node:child_process')
   const vitepressBin = path.join(PKG_ROOT, 'node_modules', '.bin', 'vitepress')
-  execFileSync(vitepressBin, ['dev'], { cwd: CWD, stdio: 'inherit' })
+  execFileSync(vitepressBin, ['dev'], { cwd: PKG_ROOT, stdio: 'inherit' })
 }
 
 async function cmdBuild() {
   await ensureSetup()
-  ensureVitepressFiles()
   const { execFileSync } = await import('node:child_process')
   const vitepressBin = path.join(PKG_ROOT, 'node_modules', '.bin', 'vitepress')
-  execFileSync(vitepressBin, ['build'], { cwd: CWD, stdio: 'inherit' })
+  execFileSync(vitepressBin, ['build'], { cwd: PKG_ROOT, stdio: 'inherit' })
 }
 
 async function cmdPreview() {
   const { execFileSync } = await import('node:child_process')
   const vitepressBin = path.join(PKG_ROOT, 'node_modules', '.bin', 'vitepress')
-  execFileSync(vitepressBin, ['preview'], { cwd: CWD, stdio: 'inherit' })
+  execFileSync(vitepressBin, ['preview'], { cwd: PKG_ROOT, stdio: 'inherit' })
 }
 
 function cmdAdd() {
@@ -297,7 +263,7 @@ function cmdAdd() {
   repos[name] = resolved
   saveReposConfig(CONFIG_PATH, repos)
   console.log(`Added ${name} -> ${resolved}`)
-  linkRepos(repos, CONTENT_DIR, CWD)
+  linkRepos(repos, CONTENT_DIR, PKG_ROOT)
   console.log('\nNote: Restart `forgedocs dev` if the dev server is running to see the new repo.')
 }
 
@@ -321,7 +287,7 @@ function cmdRemove() {
   delete repos[repoName]
   saveReposConfig(CONFIG_PATH, repos)
   console.log(`Removed "${repoName}" from config.`)
-  linkRepos(repos, CONTENT_DIR, CWD)
+  linkRepos(repos, CONTENT_DIR, PKG_ROOT)
 }
 
 function cmdStatus() {
@@ -892,14 +858,6 @@ function cmdDoctor() {
     addCheck('vitepress', 'ok', 'VitePress installed')
   }
 
-  // Check docsite.config.mjs
-  const configExists = fs.existsSync(path.join(CWD, 'docsite.config.mjs'))
-  addCheck(
-    'config',
-    configExists ? 'ok' : 'warn',
-    `docsite.config.mjs ${configExists ? 'found' : 'not found (using defaults)'}`,
-  )
-
   if (jsonOutput) {
     console.log(JSON.stringify({ checks, issueCount: issues }, null, 2))
     return
@@ -940,7 +898,7 @@ async function ensureSetup() {
   }
   if (needsRefresh) {
     console.log('Refreshing links...')
-    linkRepos(repos, CONTENT_DIR, CWD)
+    linkRepos(repos, CONTENT_DIR, PKG_ROOT)
   }
 }
 

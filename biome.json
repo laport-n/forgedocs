@@ -35,7 +35,7 @@
       "lib/**",
       "bin/**",
       "test/**",
-      ".vitepress/config.ts",
+      ".vitepress/config.mts",
       "*.json",
       "!!**/docsite.config.mjs"
     ]

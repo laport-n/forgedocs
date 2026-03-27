@@ -44,3 +44,5 @@ The forgedocs MCP server (`forgedocs mcp`) exposes these tools:
 - `get_codemap` — ARCHITECTURE.md codemap as structured JSON
 - `check_drift` — detect documentation drift vs filesystem
 - `suggest_updates` — prioritized actionable suggestions for improving docs
+- `query_docs` — structured queries (invariants, codemap, glossary, security rules)
+- `lint_docs` — lint results for a service

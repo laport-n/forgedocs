@@ -4,7 +4,7 @@
 
 Plugins extend Forgedocs with custom pages, sidebar items, and hooks into discovery and build phases. They are ESM modules that receive a plugin API object.
 
-**Status:** Experimental. The API may change between minor versions. No built-in plugins ship with Forgedocs yet.
+**Status:** Experimental. The API may change between minor versions. No built-in plugins ship with Forgedocs yet. See [ADR-005](../adr/005-plugin-system-design.md) for design rationale.
 
 ## Plugin Format
 

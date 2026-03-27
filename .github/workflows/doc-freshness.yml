@@ -61,12 +61,8 @@ jobs:
           echo "drift_removed=${DRIFT_REMOVED}" >> $GITHUB_OUTPUT
           echo "drift_stale=${DRIFT_STALE}" >> $GITHUB_OUTPUT
 
-          # Save multiline lint details
-          {
-            echo 'lint_details<<LINT_EOF'
-            echo "$LINT_DETAILS"
-            echo 'LINT_EOF'
-          } >> $GITHUB_OUTPUT
+          # Save lint details to file (avoids backtick issues in github-script)
+          echo "$LINT_DETAILS" > /tmp/lint-details.txt
 
       - name: Check structural changes
         id: freshness
@@ -127,17 +123,14 @@ jobs:
             fi
           fi
 
-          # Save warnings (escaped for multiline output)
-          {
-            echo 'warnings<<FRESH_EOF'
-            echo -e "$WARNINGS"
-            echo 'FRESH_EOF'
-          } >> $GITHUB_OUTPUT
+          # Save warnings to file (avoids backtick issues in github-script)
+          echo -e "$WARNINGS" > /tmp/freshness-warnings.txt
 
       - name: Post PR comment
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
             const score = parseInt('${{ steps.doc-check.outputs.score }}') || 0;
             const maxScore = parseInt('${{ steps.doc-check.outputs.max_score }}') || 100;
             const pct = parseInt('${{ steps.doc-check.outputs.pct }}') || 0;
@@ -147,55 +140,59 @@ jobs:
             const driftAdded = parseInt('${{ steps.doc-check.outputs.drift_added }}') || 0;
             const driftRemoved = parseInt('${{ steps.doc-check.outputs.drift_removed }}') || 0;
             const driftStale = parseInt('${{ steps.doc-check.outputs.drift_stale }}') || 0;
-            const lintDetails = `${{ steps.doc-check.outputs.lint_details }}`.trim();
-            const freshnessWarnings = `${{ steps.freshness.outputs.warnings }}`.trim();
+
+            // Read multiline content from files (avoids template literal injection)
+            let lintDetails = '';
+            try { lintDetails = fs.readFileSync('/tmp/lint-details.txt', 'utf-8').trim(); } catch {}
+            let freshnessWarnings = '';
+            try { freshnessWarnings = fs.readFileSync('/tmp/freshness-warnings.txt', 'utf-8').trim(); } catch {}
 
             // Build progress bar
             const filled = Math.round(pct / 5);
             const empty = 20 - filled;
-            const bar = '█'.repeat(filled) + '░'.repeat(empty);
+            const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(empty);
 
             // Choose color emoji
-            let scoreEmoji = '🟢';
-            if (pct < 50) scoreEmoji = '🔴';
-            else if (pct < 70) scoreEmoji = '🟠';
-            else if (pct < 90) scoreEmoji = '🟡';
+            let scoreEmoji = '\uD83D\uDFE2';
+            if (pct < 50) scoreEmoji = '\uD83D\uDD34';
+            else if (pct < 70) scoreEmoji = '\uD83D\uDFE0';
+            else if (pct < 90) scoreEmoji = '\uD83D\uDFE1';
 
             // Status line
-            let statusIcon = '✅';
+            let statusIcon = '\u2705';
             let statusText = 'All clear';
-            if (lintErrors > 0) { statusIcon = '❌'; statusText = `${lintErrors} error(s) need fixing`; }
-            else if (lintWarnings > 0 || driftTotal > 0 || freshnessWarnings) { statusIcon = '⚠️'; statusText = 'Warnings detected — review below'; }
+            if (lintErrors > 0) { statusIcon = '\u274C'; statusText = lintErrors + ' error(s) need fixing'; }
+            else if (lintWarnings > 0 || driftTotal > 0 || freshnessWarnings) { statusIcon = '\u26A0\uFE0F'; statusText = 'Warnings detected \u2014 review below'; }
 
-            let body = `## 📚 Documentation Health\n\n`;
-            body += `${scoreEmoji} **Score: ${score}/${maxScore}** ${bar} ${pct}%\n\n`;
-            body += `| Check | Status |\n|-------|--------|\n`;
-            body += `| Lint | ${lintErrors === 0 ? '✅' : '❌'} ${lintErrors} error(s), ${lintWarnings} warning(s) |\n`;
-            body += `| Drift | ${driftTotal === 0 ? '✅' : '⚠️'} ${driftTotal === 0 ? 'No drift' : `${driftAdded} new, ${driftRemoved} removed, ${driftStale} stale`} |\n`;
-            body += `| Freshness | ${freshnessWarnings ? '⚠️ See below' : '✅ Up to date'} |\n\n`;
+            let body = '## \uD83D\uDCDA Documentation Health\n\n';
+            body += scoreEmoji + ' **Score: ' + score + '/' + maxScore + '** ' + bar + ' ' + pct + '%\n\n';
+            body += '| Check | Status |\n|-------|--------|\n';
+            body += '| Lint | ' + (lintErrors === 0 ? '\u2705' : '\u274C') + ' ' + lintErrors + ' error(s), ' + lintWarnings + ' warning(s) |\n';
+            body += '| Drift | ' + (driftTotal === 0 ? '\u2705' : '\u26A0\uFE0F') + ' ' + (driftTotal === 0 ? 'No drift' : driftAdded + ' new, ' + driftRemoved + ' removed, ' + driftStale + ' stale') + ' |\n';
+            body += '| Freshness | ' + (freshnessWarnings ? '\u26A0\uFE0F See below' : '\u2705 Up to date') + ' |\n\n';
 
             // Lint details
             if (lintDetails) {
-              body += `### Lint Details\n\n${lintDetails}\n\n`;
+              body += '### Lint Details\n\n' + lintDetails + '\n\n';
             }
 
             // Drift details
             if (driftTotal > 0) {
-              body += `### Drift Details\n\n`;
-              if (driftAdded > 0) body += `- **${driftAdded}** new directory(ies) not in ARCHITECTURE.md codemap\n`;
-              if (driftRemoved > 0) body += `- **${driftRemoved}** codemap entry(ies) reference missing paths\n`;
-              if (driftStale > 0) body += `- **${driftStale}** entry(ies) marked [To be documented]\n`;
-              body += `\n`;
+              body += '### Drift Details\n\n';
+              if (driftAdded > 0) body += '- **' + driftAdded + '** new directory(ies) not in ARCHITECTURE.md codemap\n';
+              if (driftRemoved > 0) body += '- **' + driftRemoved + '** codemap entry(ies) reference missing paths\n';
+              if (driftStale > 0) body += '- **' + driftStale + '** entry(ies) marked [To be documented]\n';
+              body += '\n';
             }
 
             // Freshness warnings
             if (freshnessWarnings) {
-              body += `### Freshness Warnings\n\n${freshnessWarnings}\n`;
+              body += '### Freshness Warnings\n\n' + freshnessWarnings + '\n';
             }
 
-            body += `---\n`;
-            body += `<sub>${statusIcon} ${statusText} · Run \`forgedocs check\` locally for full details</sub>\n`;
-            body += `<!-- forgedocs-doc-health -->`;
+            body += '---\n';
+            body += '<sub>' + statusIcon + ' ' + statusText + ' \u00B7 Run `forgedocs check` locally for full details</sub>\n';
+            body += '<!-- forgedocs-doc-health -->';
 
             // Find existing comment to update (avoid spam)
             const MARKER = '<!-- forgedocs-doc-health -->';

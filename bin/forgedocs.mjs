@@ -556,7 +556,7 @@ async function cmdLint() {
 async function cmdCheck() {
   const { lintDocs, formatLintReport } = await import('../lib/lint.mjs')
   const { detectDrift, formatDriftReport } = await import('../lib/diff.mjs')
-  const { calculateHealth, formatHealthReport } = await import('../lib/health.mjs')
+  const { calculateHealth } = await import('../lib/health.mjs')
   const jsonOutput = hasFlag('--json')
   const targetPath = getPositionalArg()
   const threshold = Number.parseInt(getFlagValue('--threshold') || '0', 10)
@@ -594,7 +594,6 @@ async function cmdCheck() {
     // Lint
     result.lint = lintDocs(repoPath)
     const lintErrors = result.lint.filter((r) => r.severity === 'error').length
-    const lintWarnings = result.lint.filter((r) => r.severity === 'warn').length
     if (lintErrors > 0) hasErrors = true
 
     // Diff
@@ -617,7 +616,6 @@ async function cmdCheck() {
       console.log('═'.repeat(60))
 
       // Lint summary
-      const lintInfos = result.lint.filter((r) => r.severity === 'info').length
       if (result.lint.length === 0) {
         console.log('\n  Lint: No issues')
       } else {

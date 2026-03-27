@@ -1,0 +1,38 @@
+name: Update Doc Health Badge
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'ARCHITECTURE.md'
+      - 'CLAUDE.md'
+      - 'README.md'
+      - 'docs/**'
+      - 'lib/**'
+
+jobs:
+  update-badge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate badge
+        run: |
+          node bin/forgedocs.mjs badge . -o docs/badge-health.svg
+          SCORE=$(node bin/forgedocs.mjs score . --json | node -e "const r=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));console.log(r.score+'/'+r.maxScore)")
+          echo "Doc health: ${SCORE}"
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/badge-health.svg
+          git diff --cached --quiet && echo "Badge unchanged" && exit 0
+          git commit -m "chore: update doc health badge [skip ci]"
+          git push

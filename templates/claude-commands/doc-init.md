@@ -113,6 +113,14 @@ Create `CLAUDE.md` at the repo root. This file is **read by AI coding agents at 
 - New auth mechanism or sensitive data handling → update `docs/security.md`
 - New domain vocabulary → update `docs/glossary.md`
 - New complex feature → create `docs/features/<name>.md`
+
+## AI tools available (via MCP)
+If the forgedocs MCP server is configured, these tools are available:
+- `get_codemap` — read ARCHITECTURE.md codemap as structured JSON
+- `search_docs` — full-text search across all documentation
+- `get_health_score` — doc health score with detailed breakdown
+- `check_drift` — detect documentation drift vs filesystem
+- `suggest_updates` — get prioritized actionable suggestions for improving docs
 ```
 
 ### Step 5 — Generate docs/ directory
@@ -212,7 +220,7 @@ For each rule that can be verified automatically, add an HTML comment with a che
 
 ### Step 6 — Install Claude Code commands
 
-Create `.claude/commands/` with 3 files copied from docsite templates:
+Create `.claude/commands/` with 3 files copied from forgedocs templates:
 - `doc-feature.md` — creates feature documentation
 - `doc-sync.md` — checks if docs need updating after code changes
 - `doc-review.md` — full documentation audit
@@ -237,7 +245,7 @@ If it doesn't exist, create it with just this section.
 
 Show the user:
 1. All files created (with line counts)
-2. How to verify: "Run your docsite and check the new service appears"
+2. How to verify: "Run `forgedocs dev` and check the new service appears"
 3. What to review: "Check ARCHITECTURE.md invariants — I may have missed some"
 4. Next steps: "Use `/doc-feature` to document complex features"
 

@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.0] — 2026-03-27
+
+### Added
+- **`forgedocs lint`** — Documentation linter with 10 rules: broken codemap refs, stale placeholders, placeholder invariants, empty invariants, missing invariants, ARCHITECTURE.md length, CLAUDE.md structure (4 required sections), missing README/CLAUDE/ARCHITECTURE, service-map freshness, ADR format, feature doc structure, broken file references in docs. Exits with code 1 on errors for CI integration. Supports `--json`.
+- **`forgedocs check`** — Unified check command that runs lint + diff + score in one pass. Supports `--threshold <n>` to set a minimum score percentage (exits 1 if below). Ideal for CI gates.
+- **`query_docs` MCP tool** — Targeted structured queries (8 types: invariants, codemap, glossary, security-rules, service-dependencies, adr-rules, feature-invariants, all-rules) returning JSON. 3-5x more token-efficient than raw markdown for AI agents.
+- **`lint_docs` MCP tool** — AI agents can self-verify documentation quality via MCP.
+- **PR template** — `forgedocs install` now creates `.github/PULL_REQUEST_TEMPLATE.md` with documentation checklist (ARCHITECTURE.md, ADR, security, service-map, glossary).
+- **MCP auto-configuration** — `forgedocs install` auto-configures `.claude/settings.json` with the forgedocs MCP server.
+- **CI lint step** — `doc-freshness.yml` template now runs `forgedocs lint` before freshness checks, surfacing errors in GitHub job summary.
+- **Philosophy section** in README — Anchors project DNA in matklad's ARCHITECTURE.md and OpenAI's Harness Engineering.
+- **ADR 004** — Documents matklad + Harness Engineering as architectural foundation.
+
+### Changed
+- MCP server now exposes 10 tools (was 4): added `get_health_score`, `get_codemap`, `check_drift`, `suggest_updates`, `query_docs`, `lint_docs`
+- Generated CLAUDE.md template now includes example entries instead of placeholders, "When to update documentation" triggers, and MCP tools section
+- Generated ARCHITECTURE.md invariants now use real example commands instead of `echo "Add verification commands"`
+- Sample repo CLAUDE.md rewritten to navigation-first format
+- Sample ADR rewritten from Nygard format to Forgedocs format (What/How/Rules/Trade-offs)
+
+### Fixed
+- Lint false positives on `[To be documented]` inside code blocks, backtick-quoted references, and behavioral descriptions
+- Lint false positives on `file:symbol` paths (e.g., `lib/diff.mjs:parseCodemap`)
+- Stale "docsite" references in templates replaced with "forgedocs"
+- Unused variable in `lib/installer.mjs`
+
 ## [0.6.0] — 2026-03-26
 
 ### Added

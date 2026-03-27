@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main, master]
 
+permissions:
+  pull-requests: write
+
 jobs:
   doc-freshness:
     runs-on: ubuntu-latest
@@ -12,13 +15,61 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check if structural changes need doc updates
-        run: |
-          set -e
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
+      - name: Run documentation checks
+        id: doc-check
+        run: |
+          # Run forgedocs check and capture results
+          npx forgedocs check . --json > /tmp/check-results.json 2>/dev/null || true
+
+          # Extract score
+          SCORE=$(node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/check-results.json','utf-8'));const v=Object.values(r.repos||{})[0];console.log(v?.health?.score||0)")
+          MAX_SCORE=$(node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/check-results.json','utf-8'));const v=Object.values(r.repos||{})[0];console.log(v?.health?.maxScore||100)")
+          PCT=$((SCORE * 100 / MAX_SCORE))
+
+          # Extract lint results
+          LINT_ERRORS=$(node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/check-results.json','utf-8'));const v=Object.values(r.repos||{})[0];console.log(v?.lint?.errors||0)")
+          LINT_WARNINGS=$(node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/check-results.json','utf-8'));const v=Object.values(r.repos||{})[0];console.log((v?.lint?.results||[]).filter(x=>x.severity==='warn').length)")
+          LINT_DETAILS=$(node -e "
+            const r=JSON.parse(require('fs').readFileSync('/tmp/check-results.json','utf-8'));
+            const v=Object.values(r.repos||{})[0];
+            const results=(v?.lint?.results||[]).filter(x=>x.severity!=='info');
+            results.forEach(x=>{
+              const icon=x.severity==='error'?'❌':'⚠️';
+              const fix=x.fix?' → '+x.fix:'';
+              console.log(icon+' **'+x.file+'**: '+x.message+fix);
+            });
+          ")
+
+          # Extract drift
+          DRIFT_ADDED=$(node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/check-results.json','utf-8'));const v=Object.values(r.repos||{})[0];console.log((v?.drift?.added||[]).length)")
+          DRIFT_REMOVED=$(node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/check-results.json','utf-8'));const v=Object.values(r.repos||{})[0];console.log((v?.drift?.removed||[]).length)")
+          DRIFT_STALE=$(node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/check-results.json','utf-8'));const v=Object.values(r.repos||{})[0];console.log((v?.drift?.stale||[]).length)")
+          DRIFT_TOTAL=$((DRIFT_ADDED + DRIFT_REMOVED + DRIFT_STALE))
+
+          # Save to outputs
+          echo "score=${SCORE}" >> $GITHUB_OUTPUT
+          echo "max_score=${MAX_SCORE}" >> $GITHUB_OUTPUT
+          echo "pct=${PCT}" >> $GITHUB_OUTPUT
+          echo "lint_errors=${LINT_ERRORS}" >> $GITHUB_OUTPUT
+          echo "lint_warnings=${LINT_WARNINGS}" >> $GITHUB_OUTPUT
+          echo "drift_total=${DRIFT_TOTAL}" >> $GITHUB_OUTPUT
+          echo "drift_added=${DRIFT_ADDED}" >> $GITHUB_OUTPUT
+          echo "drift_removed=${DRIFT_REMOVED}" >> $GITHUB_OUTPUT
+          echo "drift_stale=${DRIFT_STALE}" >> $GITHUB_OUTPUT
+
+          # Save lint details to file (avoids backtick issues in github-script)
+          echo "$LINT_DETAILS" > /tmp/lint-details.txt
+
+      - name: Check structural changes
+        id: freshness
+        run: |
           WARNINGS=""
 
-          # Detect source root (first match wins)
+          # Detect source root
           SOURCE_ROOT=""
           for dir in app src lib pkg internal cmd; do
             if [ -d "$dir" ]; then
@@ -28,59 +79,155 @@ jobs:
           done
 
           if [ -z "$SOURCE_ROOT" ]; then
-            echo "No source root detected, skipping."
+            echo "warnings=" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Get list of changed files in this PR
           CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
 
-          # Check 1: New or removed directories in source root → ARCHITECTURE.md
+          # Check 1: New/changed modules → ARCHITECTURE.md
           DIR_CHANGES=$(echo "$CHANGED" | grep -E "^${SOURCE_ROOT}/[^/]+/" | sed "s|${SOURCE_ROOT}/\([^/]*\)/.*|\1|" | sort -u || true)
           if [ -n "$DIR_CHANGES" ]; then
             if ! echo "$CHANGED" | grep -q "ARCHITECTURE.md"; then
-              WARNINGS="${WARNINGS}\n⚠️ New/changed modules in \`${SOURCE_ROOT}/\` but \`ARCHITECTURE.md\` was not updated: $(echo $DIR_CHANGES | tr '\n' ', ')"
+              MODULES=$(echo $DIR_CHANGES | tr '\n' ', ' | sed 's/, $//')
+              WARNINGS="${WARNINGS}⚠️ **ARCHITECTURE.md** not updated but modules changed: \`${MODULES}\`\n> If these are implementation changes (not new modules), safe to ignore.\n\n"
             fi
           fi
 
-          # Check 2: New route/endpoint files → service-map.md
+          # Check 2: Route/endpoint files → service-map.md
           ROUTE_CHANGES=$(echo "$CHANGED" | grep -iE "(route|endpoint|controller|handler)" || true)
           if [ -n "$ROUTE_CHANGES" ]; then
             if ! echo "$CHANGED" | grep -q "docs/service-map.md"; then
-              WARNINGS="${WARNINGS}\n⚠️ Route/endpoint changes detected but \`docs/service-map.md\` was not updated."
+              ROUTE_FILES=$(echo "$ROUTE_CHANGES" | head -5 | sed 's/^/  - `/' | sed 's/$/`/')
+              WARNINGS="${WARNINGS}⚠️ **service-map.md** not updated. Triggered by:\n${ROUTE_FILES}\n> If these don't affect inter-service communication, safe to ignore.\n\n"
             fi
           fi
 
-          # Check 3: Auth/security file changes → security.md
+          # Check 3: Security-related files → security.md
           SEC_CHANGES=$(echo "$CHANGED" | grep -iE "(auth|security|token|jwt|oauth|encrypt|secret)" || true)
           if [ -n "$SEC_CHANGES" ]; then
             if ! echo "$CHANGED" | grep -q "docs/security.md"; then
-              WARNINGS="${WARNINGS}\n⚠️ Security-related changes detected but \`docs/security.md\` was not updated. Verify if needed."
+              SEC_FILES=$(echo "$SEC_CHANGES" | head -5 | sed 's/^/  - `/' | sed 's/$/`/')
+              WARNINGS="${WARNINGS}⚠️ **security.md** not updated. Triggered by:\n${SEC_FILES}\n> If these files just mention \"security\" in names/comments (not actual security changes), safe to ignore.\n\n"
             fi
           fi
 
-          # Check 4: service-map.md staleness (uses python3 for cross-platform date math)
+          # Check 4: service-map.md staleness
           if [ -f "docs/service-map.md" ]; then
             LAST_VERIFIED=$(grep -oP 'Last verified: \K\d{4}-\d{2}-\d{2}' docs/service-map.md || echo "")
             if [ -n "$LAST_VERIFIED" ]; then
               DAYS_OLD=$(python3 -c "from datetime import date; print((date.today() - date.fromisoformat('$LAST_VERIFIED')).days)")
               if [ "$DAYS_OLD" -gt 90 ]; then
-                WARNINGS="${WARNINGS}\n⚠️ \`docs/service-map.md\` last verified ${DAYS_OLD} days ago (max 90). Run \`/doc-review\`."
+                WARNINGS="${WARNINGS}⚠️ **service-map.md** last verified ${DAYS_OLD} days ago (max 90). Run \`/doc-review\`.\n\n"
               fi
             fi
           fi
 
-          # Output results
-          if [ -n "$WARNINGS" ]; then
-            echo "## 📚 Documentation Freshness" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo -e "$WARNINGS" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Run \`/doc-sync\` in Claude Code to update affected docs." >> $GITHUB_STEP_SUMMARY
-            echo -e "$WARNINGS"
-            echo "::warning::Documentation may need updating. See job summary."
-          else
-            echo "## 📚 Documentation Freshness" >> $GITHUB_STEP_SUMMARY
-            echo "✅ No documentation updates needed." >> $GITHUB_STEP_SUMMARY
-            echo "✅ Documentation looks fresh."
+          # Save warnings to file (avoids backtick issues in github-script)
+          echo -e "$WARNINGS" > /tmp/freshness-warnings.txt
+
+      - name: Post PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const score = parseInt('${{ steps.doc-check.outputs.score }}') || 0;
+            const maxScore = parseInt('${{ steps.doc-check.outputs.max_score }}') || 100;
+            const pct = parseInt('${{ steps.doc-check.outputs.pct }}') || 0;
+            const lintErrors = parseInt('${{ steps.doc-check.outputs.lint_errors }}') || 0;
+            const lintWarnings = parseInt('${{ steps.doc-check.outputs.lint_warnings }}') || 0;
+            const driftTotal = parseInt('${{ steps.doc-check.outputs.drift_total }}') || 0;
+            const driftAdded = parseInt('${{ steps.doc-check.outputs.drift_added }}') || 0;
+            const driftRemoved = parseInt('${{ steps.doc-check.outputs.drift_removed }}') || 0;
+            const driftStale = parseInt('${{ steps.doc-check.outputs.drift_stale }}') || 0;
+
+            // Read multiline content from files (avoids template literal injection)
+            let lintDetails = '';
+            try { lintDetails = fs.readFileSync('/tmp/lint-details.txt', 'utf-8').trim(); } catch {}
+            let freshnessWarnings = '';
+            try { freshnessWarnings = fs.readFileSync('/tmp/freshness-warnings.txt', 'utf-8').trim(); } catch {}
+
+            // Build progress bar
+            const filled = Math.round(pct / 5);
+            const empty = 20 - filled;
+            const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(empty);
+
+            // Choose color emoji
+            let scoreEmoji = '\uD83D\uDFE2';
+            if (pct < 50) scoreEmoji = '\uD83D\uDD34';
+            else if (pct < 70) scoreEmoji = '\uD83D\uDFE0';
+            else if (pct < 90) scoreEmoji = '\uD83D\uDFE1';
+
+            // Status line
+            let statusIcon = '\u2705';
+            let statusText = 'All clear';
+            if (lintErrors > 0) { statusIcon = '\u274C'; statusText = lintErrors + ' error(s) need fixing'; }
+            else if (lintWarnings > 0 || driftTotal > 0 || freshnessWarnings) { statusIcon = '\u26A0\uFE0F'; statusText = 'Warnings detected \u2014 review below'; }
+
+            let body = '## \uD83D\uDCDA Documentation Health\n\n';
+            body += scoreEmoji + ' **Score: ' + score + '/' + maxScore + '** ' + bar + ' ' + pct + '%\n\n';
+            body += '| Check | Status |\n|-------|--------|\n';
+            body += '| Lint | ' + (lintErrors === 0 ? '\u2705' : '\u274C') + ' ' + lintErrors + ' error(s), ' + lintWarnings + ' warning(s) |\n';
+            body += '| Drift | ' + (driftTotal === 0 ? '\u2705' : '\u26A0\uFE0F') + ' ' + (driftTotal === 0 ? 'No drift' : driftAdded + ' new, ' + driftRemoved + ' removed, ' + driftStale + ' stale') + ' |\n';
+            body += '| Freshness | ' + (freshnessWarnings ? '\u26A0\uFE0F See below' : '\u2705 Up to date') + ' |\n\n';
+
+            // Lint details
+            if (lintDetails) {
+              body += '### Lint Details\n\n' + lintDetails + '\n\n';
+            }
+
+            // Drift details
+            if (driftTotal > 0) {
+              body += '### Drift Details\n\n';
+              if (driftAdded > 0) body += '- **' + driftAdded + '** new directory(ies) not in ARCHITECTURE.md codemap\n';
+              if (driftRemoved > 0) body += '- **' + driftRemoved + '** codemap entry(ies) reference missing paths\n';
+              if (driftStale > 0) body += '- **' + driftStale + '** entry(ies) marked [To be documented]\n';
+              body += '\n';
+            }
+
+            // Freshness warnings
+            if (freshnessWarnings) {
+              body += '### Freshness Warnings\n\n' + freshnessWarnings + '\n';
+            }
+
+            body += '---\n';
+            body += '<sub>' + statusIcon + ' ' + statusText + ' \u00B7 Run `forgedocs check` locally for full details</sub>\n';
+            body += '<!-- forgedocs-doc-health -->';
+
+            // Find existing comment to update (avoid spam)
+            const MARKER = '<!-- forgedocs-doc-health -->';
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(MARKER));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Write job summary
+        run: |
+          PCT=${{ steps.doc-check.outputs.pct }}
+          LINT_ERRORS=${{ steps.doc-check.outputs.lint_errors }}
+          echo "## 📚 Documentation Health: ${PCT}%" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Score: ${{ steps.doc-check.outputs.score }}/${{ steps.doc-check.outputs.max_score }}" >> $GITHUB_STEP_SUMMARY
+          echo "Lint: ${LINT_ERRORS} error(s), ${{ steps.doc-check.outputs.lint_warnings }} warning(s)" >> $GITHUB_STEP_SUMMARY
+          echo "Drift: ${{ steps.doc-check.outputs.drift_total }} issue(s)" >> $GITHUB_STEP_SUMMARY
+          if [ "$LINT_ERRORS" -gt 0 ]; then
+            echo "::warning::Documentation has ${LINT_ERRORS} lint error(s). Run \`forgedocs check\` locally."
           fi

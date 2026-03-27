@@ -37,6 +37,8 @@ Commands:
   score [path]             Show doc health score for a repo or all tracked repos
   badge [path]             Generate SVG doc health badge
   diff [path]              Detect documentation drift (codemap vs filesystem)
+  lint [path]              Lint documentation (broken refs, stale placeholders, structure)
+  check [path]             Run all checks: lint + diff + score (one command for CI)
   export <format> [path]   Export docs (formats: json, html)
   watch                    Watch tracked repos for changes that need doc updates
   install <path> [--force] Install Claude Code commands into a repo
@@ -498,6 +500,170 @@ async function cmdDiff() {
   }
 }
 
+async function cmdLint() {
+  const { lintDocs, formatLintReport } = await import('../lib/lint.mjs')
+  const jsonOutput = hasFlag('--json')
+  const targetPath = getPositionalArg()
+
+  if (targetPath) {
+    const resolved = path.resolve(expandHome(targetPath))
+    if (!fs.existsSync(resolved)) {
+      console.error(`Directory not found: ${resolved}`)
+      process.exit(1)
+    }
+    const results = lintDocs(resolved)
+    if (jsonOutput) {
+      console.log(JSON.stringify({ name: path.basename(resolved), results }, null, 2))
+    } else {
+      console.log(formatLintReport(resolved, results))
+    }
+    const errors = results.filter((r) => r.severity === 'error')
+    if (errors.length > 0) process.exit(1)
+    return
+  }
+
+  // Lint all tracked repos
+  const repos = loadReposConfig(CONFIG_PATH)
+  if (!repos || Object.keys(repos).length === 0) {
+    console.log('No repos configured. Run: forgedocs init')
+    return
+  }
+
+  const allResults = {}
+  let totalErrors = 0
+  for (const [name, repoPath] of Object.entries(repos)) {
+    if (!fs.existsSync(repoPath)) continue
+    const results = lintDocs(repoPath)
+    allResults[name] = results
+    totalErrors += results.filter((r) => r.severity === 'error').length
+    if (!jsonOutput) {
+      console.log(formatLintReport(repoPath, results))
+    }
+  }
+
+  if (jsonOutput) {
+    console.log(JSON.stringify({ repos: allResults, totalErrors }, null, 2))
+  } else if (Object.keys(allResults).length > 1) {
+    const totalWarnings = Object.values(allResults)
+      .flat()
+      .filter((r) => r.severity === 'warn').length
+    console.log(`Overall: ${totalErrors} error(s), ${totalWarnings} warning(s)\n`)
+  }
+
+  if (totalErrors > 0) process.exit(1)
+}
+
+async function cmdCheck() {
+  const { lintDocs, formatLintReport } = await import('../lib/lint.mjs')
+  const { detectDrift, formatDriftReport } = await import('../lib/diff.mjs')
+  const { calculateHealth } = await import('../lib/health.mjs')
+  const jsonOutput = hasFlag('--json')
+  const targetPath = getPositionalArg()
+  const threshold = Number.parseInt(getFlagValue('--threshold') || '0', 10)
+
+  const resolve = (p) => path.resolve(expandHome(p || CWD))
+
+  // Collect repos to check
+  const repos = {}
+  if (targetPath) {
+    const resolved = resolve(targetPath)
+    if (!fs.existsSync(resolved)) {
+      console.error(`Directory not found: ${resolved}`)
+      process.exit(1)
+    }
+    repos[path.basename(resolved)] = resolved
+  } else {
+    const tracked = loadReposConfig(CONFIG_PATH)
+    if (tracked && Object.keys(tracked).length > 0) {
+      Object.assign(repos, tracked)
+    } else {
+      // Default to CWD if no repos configured
+      repos[path.basename(CWD)] = CWD
+    }
+  }
+
+  const allResults = {}
+  let hasErrors = false
+  let belowThreshold = false
+
+  for (const [name, repoPath] of Object.entries(repos)) {
+    if (!fs.existsSync(repoPath)) continue
+
+    const result = { name }
+
+    // Lint
+    result.lint = lintDocs(repoPath)
+    const lintErrors = result.lint.filter((r) => r.severity === 'error').length
+    if (lintErrors > 0) hasErrors = true
+
+    // Diff
+    try {
+      result.drift = detectDrift(repoPath)
+    } catch {
+      result.drift = { added: [], removed: [], stale: [], invariants: [] }
+    }
+
+    // Score
+    result.health = calculateHealth(repoPath)
+    const pct = Math.round((result.health.score / result.health.maxScore) * 100)
+    if (threshold > 0 && pct < threshold) belowThreshold = true
+
+    allResults[name] = result
+
+    if (!jsonOutput) {
+      console.log(`\n${'═'.repeat(60)}`)
+      console.log(`  ${name}`)
+      console.log('═'.repeat(60))
+
+      // Lint summary
+      if (result.lint.length === 0) {
+        console.log('\n  Lint: No issues')
+      } else {
+        console.log(formatLintReport(repoPath, result.lint))
+      }
+
+      // Drift summary
+      const driftCount = result.drift.added.length + result.drift.removed.length + result.drift.stale.length
+      if (driftCount === 0) {
+        console.log('  Drift: No drift detected')
+      } else {
+        console.log(formatDriftReport(repoPath, result.drift))
+      }
+
+      // Score
+      console.log(`\n  Score: ${result.health.score}/${result.health.maxScore} (${pct}%)`)
+      if (threshold > 0) {
+        console.log(`  Threshold: ${threshold}% ${pct >= threshold ? '— PASS' : '— FAIL'}`)
+      }
+    }
+  }
+
+  if (jsonOutput) {
+    const output = {}
+    for (const [name, r] of Object.entries(allResults)) {
+      output[name] = {
+        lint: { results: r.lint, errors: r.lint.filter((x) => x.severity === 'error').length },
+        drift: r.drift,
+        health: r.health,
+      }
+    }
+    console.log(JSON.stringify({ repos: output, threshold: threshold || null }, null, 2))
+  } else if (Object.keys(allResults).length > 0) {
+    console.log(`\n${'─'.repeat(60)}`)
+    const totalLintErrors = Object.values(allResults)
+      .flatMap((r) => r.lint)
+      .filter((r) => r.severity === 'error').length
+    const totalDrift = Object.values(allResults).reduce(
+      (sum, r) => sum + r.drift.added.length + r.drift.removed.length + r.drift.stale.length,
+      0,
+    )
+    console.log(`  Total: ${totalLintErrors} lint error(s), ${totalDrift} drift issue(s)`)
+    console.log()
+  }
+
+  if (hasErrors || belowThreshold) process.exit(1)
+}
+
 async function cmdExport() {
   const format = getPositionalArg()
   if (!format || !['json', 'html'].includes(format)) {
@@ -796,6 +962,10 @@ async function main() {
       return cmdBadge()
     case 'diff':
       return cmdDiff()
+    case 'lint':
+      return cmdLint()
+    case 'check':
+      return cmdCheck()
     case 'export':
       return cmdExport()
     case 'watch':

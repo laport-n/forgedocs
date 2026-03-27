@@ -3,12 +3,23 @@
 [![npm version](https://img.shields.io/npm/v/forgedocs)](https://www.npmjs.com/package/forgedocs)
 [![CI](https://github.com/laport-n/forgedocs/actions/workflows/ci.yml/badge.svg)](https://github.com/laport-n/forgedocs/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Doc Health](docs/badge-health.svg)
 
 **Architecture docs that stay in sync with your code.** Auto-discovered from your repos. Verified by invariant checks. Maintained by AI commands.
 
 Built for developers who want docs they can trust, and AI agents that actually understand the codebase.
 
 **[See the live demo](https://laport-n.github.io/forgedocs/)**
+
+## Philosophy
+
+Forgedocs stands on two ideas:
+
+**[matklad's ARCHITECTURE.md](https://matklad.github.io/2021/02/06/ARCHITECTURE.md.html)** — Every repo deserves a high-level map: what the modules are, how data flows, and what rules must never be broken. A short document that a new developer (or an AI agent) reads first and revisits rarely. Not a manual — a map.
+
+**[OpenAI's Harness Engineering](https://openai.com/index/building-an-ai-native-engineering-culture/)** — Documentation isn't just for humans anymore. When AI agents code alongside you, the quality of your docs directly determines the quality of their output. CLAUDE.md, verifiable invariants, and structured MCP tools exist so that agents don't hallucinate — they navigate.
+
+Forgedocs is the tooling that makes both ideas practical: scaffold the docs, verify they stay true, and expose them to AI agents as structured data.
 
 ## Try it in 30 seconds
 
@@ -122,7 +133,7 @@ Claude can query your docs programmatically. Add to `.claude/settings.json`:
 }
 ```
 
-Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshness`
+Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshness` · `get_health_score` · `get_codemap` · `check_drift` · `suggest_updates` · `query_docs` · `lint_docs`
 
 ## CLI Reference
 
@@ -139,13 +150,15 @@ Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshnes
 | `forgedocs score [path]` | Show doc health score (0–100) for a repo or all repos |
 | `forgedocs badge [path]` | Generate SVG doc health badge |
 | `forgedocs diff [path]` | Detect documentation drift (codemap vs filesystem) |
+| `forgedocs lint [path]` | Lint docs (broken refs, stale placeholders, invariant syntax, structure) |
+| `forgedocs check [path]` | Run all checks: lint + diff + score in one command (ideal for CI) |
 | `forgedocs export <json\|html> [path]` | Export docs as JSON or self-contained HTML |
 | `forgedocs watch` | Watch repos for changes that need doc updates |
 | `forgedocs install <path>` | Install Claude Code commands into a repo |
 | `forgedocs doctor` | Diagnose common issues |
 | `forgedocs mcp` | Start MCP server for Claude Code |
 
-Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`) · `--preset <name>` · `--output <file>` · `--force` · `--version` · `--help`
+Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`, `check`) · `--preset <name>` · `--output <file>` · `--force` · `--threshold <n>` (on `check`) · `--version` · `--help`
 
 ### Stack Presets
 

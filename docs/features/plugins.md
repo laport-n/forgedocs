@@ -106,6 +106,14 @@ api.onBuild((buildInfo) => {
 | `runDiscoverHooks(ctx, services)` | Run all discovery hooks |
 | `runBuildHooks(ctx, buildInfo)` | Run all build hooks |
 
+## Invariants
+
+| Rule | Check |
+|------|-------|
+| A broken plugin never crashes the host | `grep -c "catch" lib/plugins.mjs` should be >= 3 |
+| No runtime dependency added for plugins | `node -e "const p=require('./package.json'); const deps=Object.keys(p.dependencies\|\|{}).filter(d=>d!=='vitepress'); console.log(deps.length)"` should print 0 |
+| Plugins must export a default function | `grep -c "\.default" lib/plugins.mjs` should be > 0 |
+
 ## Error Handling
 
 - If a plugin fails to load, a warning is printed but other plugins continue loading.

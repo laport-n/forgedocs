@@ -8,7 +8,7 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 
 | Module | Path | Purpose |
 |--------|------|---------|
-| CLI | `bin/forgedocs.mjs` | Entry point — routes subcommands (init, quickstart, dev, build, add, remove, status, score, badge, diff, export, watch, install, doctor, mcp) |
+| CLI | `bin/forgedocs.mjs` | Entry point — routes subcommands (init, quickstart, dev, build, add, remove, status, score, badge, diff, lint, check, export, watch, install, doctor, mcp) |
 | Config | `lib/config.mjs` | Loads `docsite.config.mjs` with defaults (incl. plugins), validates `.repos.json` |
 | Discovery | `lib/discovery.mjs` | Recursive filesystem scan for repos with `ARCHITECTURE.md`, auto-detects common dirs |
 | Linker | `lib/linker.mjs` | Creates symlinks/junctions/copies in `content/`, with circular symlink detection |

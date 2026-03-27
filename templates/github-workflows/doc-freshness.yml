@@ -12,6 +12,27 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Lint documentation
+        run: |
+          npx forgedocs lint . --json > /tmp/lint-results.json 2>/dev/null || true
+          ERRORS=$(node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/lint-results.json','utf-8'));console.log(r.results?.filter(x=>x.severity==='error').length||0)")
+          WARNINGS=$(node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/lint-results.json','utf-8'));console.log(r.results?.filter(x=>x.severity==='warn').length||0)")
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "## 🔍 Documentation Lint" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **${ERRORS} error(s)**, ${WARNINGS} warning(s)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            node -e "const r=JSON.parse(require('fs').readFileSync('/tmp/lint-results.json','utf-8'));(r.results||[]).filter(x=>x.severity==='error').forEach(x=>console.log('- **'+x.file+'**: '+x.message+(x.fix?' → '+x.fix:'')))" >> $GITHUB_STEP_SUMMARY
+            echo "::warning::Documentation lint found ${ERRORS} error(s). Run \`forgedocs lint\` locally."
+          elif [ "$WARNINGS" -gt 0 ]; then
+            echo "## 🔍 Documentation Lint" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ ${WARNINGS} warning(s) — no errors." >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Check if structural changes need doc updates
         run: |
           set -e

@@ -150,13 +150,14 @@ Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshnes
 | `forgedocs badge [path]` | Generate SVG doc health badge |
 | `forgedocs diff [path]` | Detect documentation drift (codemap vs filesystem) |
 | `forgedocs lint [path]` | Lint docs (broken refs, stale placeholders, invariant syntax, structure) |
+| `forgedocs check [path]` | Run all checks: lint + diff + score in one command (ideal for CI) |
 | `forgedocs export <json\|html> [path]` | Export docs as JSON or self-contained HTML |
 | `forgedocs watch` | Watch repos for changes that need doc updates |
 | `forgedocs install <path>` | Install Claude Code commands into a repo |
 | `forgedocs doctor` | Diagnose common issues |
 | `forgedocs mcp` | Start MCP server for Claude Code |
 
-Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`) · `--preset <name>` · `--output <file>` · `--force` · `--version` · `--help`
+Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`, `check`) · `--preset <name>` · `--output <file>` · `--force` · `--threshold <n>` (on `check`) · `--version` · `--help`
 
 ### Stack Presets
 

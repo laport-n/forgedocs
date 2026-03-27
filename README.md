@@ -62,7 +62,7 @@ Docs exist in wikis, but they drifted months ago. AI agents hallucinate because 
 
 **CI freshness checks** — A GitHub Action warns on PRs when code changes need doc updates. No stale docs slipping through.
 
-**Doc Health Score** — A score out of 100 that measures documentation completeness. Generate SVG badges for your README, track progress over time, and set CI thresholds.
+**Doc Health Score** — Structure (40 pts: ARCHITECTURE.md, README, CLAUDE.md, docs/, service-map) + Quality (30 pts: invariants, codemap, freshness, security) + Depth (30 pts: glossary, features, ADRs) = 100. Generate SVG badges, set CI thresholds. [Full breakdown](docs/features/health-score.md).
 
 **Drift Detection** — `forgedocs diff` compares your ARCHITECTURE.md codemap against the actual filesystem. New directories, deleted modules, stale entries — all detected without AI.
 
@@ -75,6 +75,8 @@ Docs exist in wikis, but they drifted months ago. AI agents hallucinate because 
 ## How it works
 
 Forgedocs **symlinks** your local repos into a unified [VitePress](https://vitepress.dev/) site. Nothing is copied, nothing to sync — hot-reload just works.
+
+**Why VitePress?** Single runtime dependency. Gives markdown rendering, full-text search, hot-reload via symlinks, and static site generation — no framework or app server needed. Forgedocs adds zero dependencies on top of it.
 
 ```
 forgedocs/
@@ -97,6 +99,14 @@ docs/features/     ← Deep dives. Complex features with invariants.
     ↓
 code               ← The source of truth.
 ```
+
+### Deployment and CI
+
+During development, `content/` contains symlinks to your local repos — edits appear instantly via hot-reload.
+
+For deployment, `forgedocs build` runs VitePress's static site generator, which resolves all symlinks and produces a self-contained `dist/` directory. No symlinks survive into the build output. Deploy `dist/` to any static host (GitHub Pages, Netlify, Vercel, S3).
+
+In CI environments where symlinks are unavailable, the linker falls back automatically: symlinks → directory junctions (Windows) → copy markdown files. The copy fallback ensures `forgedocs build` works in sandboxed CI runners.
 
 ---
 
@@ -176,7 +186,17 @@ Use with `forgedocs quickstart --preset <name>`:
 | `go` | `go.mod` |
 | `rust` | `Cargo.toml` |
 
-## Plugins
+## Maturity Tiers
+
+| Tier | What's included |
+|------|----------------|
+| **Core** | CLI (init, dev, build, quickstart, score, diff, lint, check, install), Claude Code commands, MCP server |
+| **Stable** | Export, watch, badge, doctor, CI workflow template |
+| **Experimental** | Plugin system, VS Code extension |
+
+Core and Stable features follow semver. Experimental features may change between minor versions.
+
+## Plugins (Experimental)
 
 Extend Forgedocs with plugins in `docsite.config.mjs`:
 
@@ -190,9 +210,9 @@ export default {
 }
 ```
 
-Plugins can add pages, sidebar items, and hook into discovery/build. See `lib/plugins.mjs` for the API.
+Plugins can add pages, sidebar items, and hook into discovery/build. See [`docs/features/plugins.md`](docs/features/plugins.md) for the full API reference.
 
-## VS Code Extension
+## VS Code Extension (Experimental)
 
 The `extensions/vscode/` directory contains a VS Code extension that provides:
 
@@ -246,7 +266,7 @@ The sidebar is generated automatically from whatever files exist. Only `ARCHITEC
 ## Examples
 
 - [`examples/sample-repo/`](examples/sample-repo/) — Minimal single-service
-- [`examples/monorepo/`](examples/monorepo/) — Multi-service with Node.js + Python
+- [`examples/monorepo/`](examples/monorepo/) — 4-service e-commerce platform (API scores 100, shows progressive disclosure)
 - [`examples/forgedocs-self/`](examples/forgedocs-self/) — Forgedocs documenting itself
 
 ## Community

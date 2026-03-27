@@ -41,7 +41,7 @@ jobs:
 
       - name: Build VitePress
         env:
-          VITEPRESS_BASE: /forgedocs/
+          FORGEDOCS_BASE: /forgedocs/
         run: npx vitepress build
 
       - uses: actions/upload-pages-artifact@v3

@@ -77,11 +77,24 @@ function ask(question) {
 
 /** Ensure VitePress config and index.md exist in CWD (copy from package if needed) */
 function ensureVitepressFiles() {
-  const configDest = path.join(CWD, '.vitepress', 'config.ts')
+  const vpDir = path.join(CWD, '.vitepress')
+  fs.mkdirSync(vpDir, { recursive: true })
+
+  // Copy config.ts (users may customize it)
+  const configDest = path.join(vpDir, 'config.ts')
   if (!fs.existsSync(configDest)) {
-    fs.mkdirSync(path.join(CWD, '.vitepress'), { recursive: true })
     fs.copyFileSync(path.join(PKG_ROOT, '.vitepress', 'config.ts'), configDest)
   }
+
+  // Symlink supporting modules so they resolve from CWD's .vitepress/
+  for (const mod of ['discovery.ts', 'rewrites.ts', 'sidebar.ts', 'utils.ts']) {
+    const dest = path.join(vpDir, mod)
+    const src = path.join(PKG_ROOT, '.vitepress', mod)
+    // Always refresh symlinks to track the installed forgedocs version
+    fs.rmSync(dest, { force: true })
+    fs.symlinkSync(src, dest)
+  }
+
   const indexDest = path.join(CWD, 'index.md')
   if (!fs.existsSync(indexDest)) {
     fs.copyFileSync(path.join(PKG_ROOT, 'index.md'), indexDest)

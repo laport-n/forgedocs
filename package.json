@@ -24,7 +24,6 @@
     "extensions/",
     ".vitepress/",
     "index.md",
-    "docsite.config.mjs",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"

@@ -1,40 +1,17 @@
-import fs from 'node:fs'
 import path from 'node:path'
 import type { DefaultTheme } from 'vitepress'
 import { defineConfig } from 'vitepress'
 import { discoverServices, resolveAllowedDirs } from './discovery'
 import { buildRewrites } from './rewrites'
 import { buildAllSidebars } from './sidebar'
-import { debug, formatServiceName } from './utils'
+import { formatServiceName } from './utils'
 
-interface ForgedocsConfig {
-  title?: string
-  description?: string
-  github?: string
-  base?: string
-  scanDirs?: string[]
-  nestedDirs?: string[]
-  extraExcludes?: string[]
-}
+const siteTitle = process.env.FORGEDOCS_TITLE || 'Forgedocs'
+const siteDescription = 'Architecture documentation for your services'
+const githubUrl = process.env.FORGEDOCS_GITHUB || ''
+const basePath = process.env.FORGEDOCS_BASE || '/'
 
-export default defineConfig(async () => {
-  // Load user config
-  let userConfig: ForgedocsConfig = {}
-  const userConfigPath = path.resolve('docsite.config.mjs')
-  if (fs.existsSync(userConfigPath)) {
-    try {
-      userConfig = (await import(`file://${userConfigPath}`)).default || {}
-    } catch (e) {
-      debug(`Could not load docsite.config.mjs: ${e}`)
-    }
-  }
-
-  const siteTitle = userConfig.title || 'Forgedocs'
-  const siteDescription = userConfig.description || 'Architecture documentation for your services'
-  const githubUrl = userConfig.github || ''
-  const basePath = userConfig.base || process.env.VITEPRESS_BASE || '/'
-  const extraExcludes: string[] = userConfig.extraExcludes || []
-
+export default defineConfig(() => {
   const contentDir = path.resolve('content')
 
   // Discover services and build config
@@ -112,8 +89,8 @@ export default defineConfig(async () => {
     'content/*/.docker/**',
     'content/*/Dockerfile',
 
-    // User-defined extra exclusions
-    ...extraExcludes,
+    // User-defined extra exclusions via env
+    ...(process.env.FORGEDOCS_EXCLUDES ? process.env.FORGEDOCS_EXCLUDES.split(',') : []),
   ]
 
   // Social links (only add GitHub if configured)

@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/forgedocs)](https://www.npmjs.com/package/forgedocs)
 [![CI](https://github.com/laport-n/forgedocs/actions/workflows/ci.yml/badge.svg)](https://github.com/laport-n/forgedocs/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Doc Health](docs/badge-health.svg)
 
 **Architecture docs that stay in sync with your code.** Auto-discovered from your repos. Verified by invariant checks. Maintained by AI commands.
 

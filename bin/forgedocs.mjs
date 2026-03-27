@@ -37,6 +37,7 @@ Commands:
   score [path]             Show doc health score for a repo or all tracked repos
   badge [path]             Generate SVG doc health badge
   diff [path]              Detect documentation drift (codemap vs filesystem)
+  lint [path]              Lint documentation (broken refs, stale placeholders, structure)
   export <format> [path]   Export docs (formats: json, html)
   watch                    Watch tracked repos for changes that need doc updates
   install <path> [--force] Install Claude Code commands into a repo
@@ -498,6 +499,59 @@ async function cmdDiff() {
   }
 }
 
+async function cmdLint() {
+  const { lintDocs, formatLintReport } = await import('../lib/lint.mjs')
+  const jsonOutput = hasFlag('--json')
+  const targetPath = getPositionalArg()
+
+  if (targetPath) {
+    const resolved = path.resolve(expandHome(targetPath))
+    if (!fs.existsSync(resolved)) {
+      console.error(`Directory not found: ${resolved}`)
+      process.exit(1)
+    }
+    const results = lintDocs(resolved)
+    if (jsonOutput) {
+      console.log(JSON.stringify({ name: path.basename(resolved), results }, null, 2))
+    } else {
+      console.log(formatLintReport(resolved, results))
+    }
+    const errors = results.filter((r) => r.severity === 'error')
+    if (errors.length > 0) process.exit(1)
+    return
+  }
+
+  // Lint all tracked repos
+  const repos = loadReposConfig(CONFIG_PATH)
+  if (!repos || Object.keys(repos).length === 0) {
+    console.log('No repos configured. Run: forgedocs init')
+    return
+  }
+
+  const allResults = {}
+  let totalErrors = 0
+  for (const [name, repoPath] of Object.entries(repos)) {
+    if (!fs.existsSync(repoPath)) continue
+    const results = lintDocs(repoPath)
+    allResults[name] = results
+    totalErrors += results.filter((r) => r.severity === 'error').length
+    if (!jsonOutput) {
+      console.log(formatLintReport(repoPath, results))
+    }
+  }
+
+  if (jsonOutput) {
+    console.log(JSON.stringify({ repos: allResults, totalErrors }, null, 2))
+  } else if (Object.keys(allResults).length > 1) {
+    const totalWarnings = Object.values(allResults)
+      .flat()
+      .filter((r) => r.severity === 'warn').length
+    console.log(`Overall: ${totalErrors} error(s), ${totalWarnings} warning(s)\n`)
+  }
+
+  if (totalErrors > 0) process.exit(1)
+}
+
 async function cmdExport() {
   const format = getPositionalArg()
   if (!format || !['json', 'html'].includes(format)) {
@@ -796,6 +850,8 @@ async function main() {
       return cmdBadge()
     case 'diff':
       return cmdDiff()
+    case 'lint':
+      return cmdLint()
     case 'export':
       return cmdExport()
     case 'watch':

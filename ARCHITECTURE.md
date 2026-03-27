@@ -16,6 +16,7 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 | Quickstart | `lib/quickstart.mjs` | Stack detection, scaffold generation (ARCHITECTURE.md, docs/), preset support (9 stacks) |
 | Health | `lib/health.mjs` | Doc health score calculation (0–100), SVG badge generation, terminal report formatting |
 | Diff | `lib/diff.mjs` | Drift detection — parses ARCHITECTURE.md codemap/invariants, compares with filesystem |
+| Lint | `lib/lint.mjs` | Documentation linter — broken refs, stale placeholders, invariant syntax, CLAUDE.md structure, ADR format |
 | Export | `lib/export.mjs` | Export docs as JSON or self-contained HTML (with inline CSS and markdown-to-HTML conversion) |
 | Watch | `lib/watch.mjs` | File watcher daemon using `fs.watch` — detects directory/config/doc changes across repos |
 | Plugins | `lib/plugins.mjs` | Lightweight plugin system — hooks for pages, sidebar items, discovery, and build |

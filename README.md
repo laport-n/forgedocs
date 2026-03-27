@@ -132,7 +132,7 @@ Claude can query your docs programmatically. Add to `.claude/settings.json`:
 }
 ```
 
-Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshness` · `get_health_score` · `get_codemap` · `check_drift` · `suggest_updates`
+Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshness` · `get_health_score` · `get_codemap` · `check_drift` · `suggest_updates` · `query_docs` · `lint_docs`
 
 ## CLI Reference
 
@@ -149,6 +149,7 @@ Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshnes
 | `forgedocs score [path]` | Show doc health score (0–100) for a repo or all repos |
 | `forgedocs badge [path]` | Generate SVG doc health badge |
 | `forgedocs diff [path]` | Detect documentation drift (codemap vs filesystem) |
+| `forgedocs lint [path]` | Lint docs (broken refs, stale placeholders, invariant syntax, structure) |
 | `forgedocs export <json\|html> [path]` | Export docs as JSON or self-contained HTML |
 | `forgedocs watch` | Watch repos for changes that need doc updates |
 | `forgedocs install <path>` | Install Claude Code commands into a repo |

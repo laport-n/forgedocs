@@ -6,11 +6,11 @@ Asynchronous task processor. Consumes jobs from RabbitMQ queues, processes them,
 
 ## Codemap
 
-| Module | Purpose | Key files |
-|--------|---------|-----------|
-| `tasks/` | Celery task definitions | `email.py`, `uploads.py`, `reports.py` |
-| `processors/` | Business logic for each task type | `email_sender.py`, `file_processor.py` |
-| `config/` | Celery and queue configuration | `celery_config.py` |
+| Module | Path | Purpose |
+|--------|------|---------|
+| Tasks | `tasks/` | Celery task definitions (email, uploads, reports) |
+| Processors | `processors/` | Business logic for each task type |
+| Config | `config/` | Celery and queue configuration |
 
 ## Data Flow
 
@@ -23,5 +23,5 @@ RabbitMQ → Celery Worker → Task Handler → Processor → External Service (
 
 | Rule | Verification |
 |------|-------------|
-| All tasks must be idempotent | `grep -rn "def " tasks/ \| wc -l` matches task count in README |
-| Failed tasks retry with exponential backoff | `grep -r "retry" tasks/ \| grep -c "backoff"` > 0 |
+| All tasks must be idempotent | `grep -c "def " tasks/*.py` matches task count in README |
+| Failed tasks retry with exponential backoff | `grep -c "backoff" tasks/*.py` should be > 0 |

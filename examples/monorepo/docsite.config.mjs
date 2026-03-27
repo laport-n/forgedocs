@@ -1,5 +1,5 @@
 export default {
-  title: 'My Platform',
-  description: 'Architecture documentation for the platform',
+  title: 'Acme Store',
+  description: 'Architecture documentation for the Acme Store platform',
   nestedDirs: ['services'],
 }

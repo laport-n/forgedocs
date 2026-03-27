@@ -6,12 +6,12 @@ REST API serving the platform's frontend and mobile clients. Handles authenticat
 
 ## Codemap
 
-| Module | Purpose | Key files |
-|--------|---------|-----------|
-| `src/routes/` | Express route handlers | `users.js`, `auth.js` |
-| `src/middleware/` | Auth, rate limiting, validation | `auth.js`, `rateLimit.js` |
-| `src/services/` | Business logic | `userService.js` |
-| `src/db/` | Database access layer | `models/`, `migrations/` |
+| Module | Path | Purpose |
+|--------|------|---------|
+| Routes | `src/routes/` | Express route handlers (users, auth, orders, products) |
+| Middleware | `src/middleware/` | Auth, rate limiting, validation, error handling |
+| Services | `src/services/` | Business logic layer |
+| Database | `src/db/` | Sequelize models and migrations |
 
 ## Data Flow
 
@@ -24,5 +24,5 @@ Client → Express Router → Middleware → Route Handler → Service → Datab
 
 | Rule | Verification |
 |------|-------------|
-| All routes require auth middleware except `/health` | `grep -r "router\." src/routes/ \| grep -v auth \| grep -v health` |
-| Database queries use parameterized statements | `grep -rn "query(" src/db/ \| grep -v "\$"` should return nothing |
+| All routes require auth middleware except `/health` | `grep -rL "authMiddleware" src/routes/` should only list health route |
+| Database queries use parameterized statements | `grep -rn "raw(" src/db/` should return nothing |

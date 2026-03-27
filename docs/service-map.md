@@ -28,7 +28,7 @@ Developer
   │     ├── lib/health.mjs → score calculation
   │     ├── lib/diff.mjs → drift detection
   │     └── VitePress (dev server / build)
-  │           └── .vitepress/config.ts → discovery.ts, sidebar.ts, rewrites.ts
+  │           └── .vitepress/config.mts → discovery.ts, sidebar.ts, rewrites.ts
   │
   ├── Claude Code (AI agent)
   │     ├── MCP Server (forgedocs mcp) → JSON-RPC 2.0

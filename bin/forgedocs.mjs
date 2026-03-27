@@ -248,19 +248,22 @@ async function cmdDev() {
   await ensureSetup()
   ensureVitepressFiles()
   const { execFileSync } = await import('node:child_process')
-  execFileSync('npx', ['vitepress', 'dev'], { cwd: CWD, stdio: 'inherit' })
+  const vitepressBin = path.join(PKG_ROOT, 'node_modules', '.bin', 'vitepress')
+  execFileSync(vitepressBin, ['dev'], { cwd: CWD, stdio: 'inherit' })
 }
 
 async function cmdBuild() {
   await ensureSetup()
   ensureVitepressFiles()
   const { execFileSync } = await import('node:child_process')
-  execFileSync('npx', ['vitepress', 'build'], { cwd: CWD, stdio: 'inherit' })
+  const vitepressBin = path.join(PKG_ROOT, 'node_modules', '.bin', 'vitepress')
+  execFileSync(vitepressBin, ['build'], { cwd: CWD, stdio: 'inherit' })
 }
 
 async function cmdPreview() {
   const { execFileSync } = await import('node:child_process')
-  execFileSync('npx', ['vitepress', 'preview'], { cwd: CWD, stdio: 'inherit' })
+  const vitepressBin = path.join(PKG_ROOT, 'node_modules', '.bin', 'vitepress')
+  execFileSync(vitepressBin, ['preview'], { cwd: CWD, stdio: 'inherit' })
 }
 
 function cmdAdd() {

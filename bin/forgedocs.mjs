@@ -80,17 +80,10 @@ function ensureVitepressFiles() {
   const vpDir = path.join(CWD, '.vitepress')
   fs.mkdirSync(vpDir, { recursive: true })
 
-  // Copy config.ts (users may customize it)
-  const configDest = path.join(vpDir, 'config.ts')
-  if (!fs.existsSync(configDest)) {
-    fs.copyFileSync(path.join(PKG_ROOT, '.vitepress', 'config.ts'), configDest)
-  }
-
-  // Symlink supporting modules so they resolve from CWD's .vitepress/
-  for (const mod of ['discovery.ts', 'rewrites.ts', 'sidebar.ts', 'utils.ts']) {
+  // Symlink all .vitepress modules from forgedocs (always refresh to track installed version)
+  for (const mod of ['config.ts', 'discovery.ts', 'rewrites.ts', 'sidebar.ts', 'utils.ts']) {
     const dest = path.join(vpDir, mod)
     const src = path.join(PKG_ROOT, '.vitepress', mod)
-    // Always refresh symlinks to track the installed forgedocs version
     fs.rmSync(dest, { force: true })
     fs.symlinkSync(src, dest)
   }

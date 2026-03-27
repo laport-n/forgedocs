@@ -17,152 +17,154 @@ interface ForgedocsConfig {
   extraExcludes?: string[]
 }
 
-// Load user config
-let userConfig: ForgedocsConfig = {}
-const userConfigPath = path.resolve('docsite.config.mjs')
-if (fs.existsSync(userConfigPath)) {
-  try {
-    userConfig = (await import(`file://${userConfigPath}`)).default || {}
-  } catch (e) {
-    debug(`Could not load docsite.config.mjs: ${e}`)
+export default defineConfig(async () => {
+  // Load user config
+  let userConfig: ForgedocsConfig = {}
+  const userConfigPath = path.resolve('docsite.config.mjs')
+  if (fs.existsSync(userConfigPath)) {
+    try {
+      userConfig = (await import(`file://${userConfigPath}`)).default || {}
+    } catch (e) {
+      debug(`Could not load docsite.config.mjs: ${e}`)
+    }
   }
-}
 
-const siteTitle = userConfig.title || 'Forgedocs'
-const siteDescription = userConfig.description || 'Architecture documentation for your services'
-const githubUrl = userConfig.github || ''
-const basePath = userConfig.base || process.env.VITEPRESS_BASE || '/'
-const extraExcludes: string[] = userConfig.extraExcludes || []
+  const siteTitle = userConfig.title || 'Forgedocs'
+  const siteDescription = userConfig.description || 'Architecture documentation for your services'
+  const githubUrl = userConfig.github || ''
+  const basePath = userConfig.base || process.env.VITEPRESS_BASE || '/'
+  const extraExcludes: string[] = userConfig.extraExcludes || []
 
-const contentDir = path.resolve('content')
+  const contentDir = path.resolve('content')
 
-// Discover services and build config
-const services = discoverServices(contentDir)
-const rewrites = buildRewrites(services, contentDir)
-const sidebar = buildAllSidebars(services, contentDir)
-const allowedDirs = resolveAllowedDirs(path.resolve('.repos.json'))
+  // Discover services and build config
+  const services = discoverServices(contentDir)
+  const rewrites = buildRewrites(services, contentDir)
+  const sidebar = buildAllSidebars(services, contentDir)
+  const allowedDirs = resolveAllowedDirs(path.resolve('.repos.json'))
 
-// Multi-stack source exclusions
-const srcExclude = [
-  // Build tools & meta
-  'node_modules/**',
-  'scripts/**',
+  // Multi-stack source exclusions
+  const srcExclude = [
+    // Build tools & meta
+    'node_modules/**',
+    'scripts/**',
 
-  // Ruby / Rails
-  'content/*/app/**',
-  'content/*/config/**',
-  'content/*/db/**',
-  'content/*/lib/**',
-  'content/*/bin/**',
-  'content/*/spec/**',
-  'content/*/vendor/**',
-  'content/*/tmp/**',
-  'content/*/log/**',
-  'content/*/public/**',
-  'content/*/storage/**',
+    // Ruby / Rails
+    'content/*/app/**',
+    'content/*/config/**',
+    'content/*/db/**',
+    'content/*/lib/**',
+    'content/*/bin/**',
+    'content/*/spec/**',
+    'content/*/vendor/**',
+    'content/*/tmp/**',
+    'content/*/log/**',
+    'content/*/public/**',
+    'content/*/storage/**',
 
-  // Node.js / TypeScript
-  'content/*/src/**',
-  'content/*/dist/**',
-  'content/*/build/**',
-  'content/*/coverage/**',
-  'content/*/node_modules/**',
+    // Node.js / TypeScript
+    'content/*/src/**',
+    'content/*/dist/**',
+    'content/*/build/**',
+    'content/*/coverage/**',
+    'content/*/node_modules/**',
 
-  // Python
-  'content/*/venv/**',
-  'content/*/.venv/**',
-  'content/*/__pycache__/**',
-  'content/*/*.egg-info/**',
-  'content/*/.tox/**',
-  'content/*/.mypy_cache/**',
+    // Python
+    'content/*/venv/**',
+    'content/*/.venv/**',
+    'content/*/__pycache__/**',
+    'content/*/*.egg-info/**',
+    'content/*/.tox/**',
+    'content/*/.mypy_cache/**',
 
-  // Go
-  'content/*/cmd/**',
-  'content/*/pkg/**',
-  'content/*/internal/**',
+    // Go
+    'content/*/cmd/**',
+    'content/*/pkg/**',
+    'content/*/internal/**',
 
-  // Rust
-  'content/*/target/**',
+    // Rust
+    'content/*/target/**',
 
-  // Java / Kotlin / Scala
-  'content/*/.gradle/**',
-  'content/*/.mvn/**',
+    // Java / Kotlin / Scala
+    'content/*/.gradle/**',
+    'content/*/.mvn/**',
 
-  // .NET
-  'content/*/obj/**',
+    // .NET
+    'content/*/obj/**',
 
-  // PHP
-  'content/*/composer/**',
+    // PHP
+    'content/*/composer/**',
 
-  // Elixir
-  'content/*/_build/**',
-  'content/*/deps/**',
-  'content/*/.elixir_ls/**',
+    // Elixir
+    'content/*/_build/**',
+    'content/*/deps/**',
+    'content/*/.elixir_ls/**',
 
-  // Generic
-  'content/*/test/**',
-  'content/*/tests/**',
-  'content/*/__tests__/**',
-  'content/*/.cloud/**',
-  'content/*/.github/**',
-  'content/*/.claude/**',
-  'content/*/compose_stack/**',
-  'content/*/swagger/**',
-  'content/*/.docker/**',
-  'content/*/Dockerfile',
+    // Generic
+    'content/*/test/**',
+    'content/*/tests/**',
+    'content/*/__tests__/**',
+    'content/*/.cloud/**',
+    'content/*/.github/**',
+    'content/*/.claude/**',
+    'content/*/compose_stack/**',
+    'content/*/swagger/**',
+    'content/*/.docker/**',
+    'content/*/Dockerfile',
 
-  // User-defined extra exclusions
-  ...extraExcludes,
-]
+    // User-defined extra exclusions
+    ...extraExcludes,
+  ]
 
-// Social links (only add GitHub if configured)
-const socialLinks: DefaultTheme.SidebarItem[] = []
-if (githubUrl) {
-  socialLinks.push({ icon: 'github', link: githubUrl })
-}
+  // Social links (only add GitHub if configured)
+  const socialLinks: DefaultTheme.SidebarItem[] = []
+  if (githubUrl) {
+    socialLinks.push({ icon: 'github', link: githubUrl })
+  }
 
-export default defineConfig({
-  title: siteTitle,
-  description: siteDescription,
-  base: basePath,
-  srcDir: '.',
-  // TODO: switch to 'warn' when VitePress supports it (currently only true/false/'localhostLinks')
-  ignoreDeadLinks: true,
+  return {
+    title: siteTitle,
+    description: siteDescription,
+    base: basePath,
+    srcDir: '.',
+    // TODO: switch to 'warn' when VitePress supports it (currently only true/false/'localhostLinks')
+    ignoreDeadLinks: true,
 
-  vite: {
-    server: {
-      fs: {
-        allow: ['.', ...allowedDirs],
+    vite: {
+      server: {
+        fs: {
+          allow: ['.', ...allowedDirs],
+        },
+        watch: {
+          followSymlinks: true,
+        },
       },
-      watch: {
-        followSymlinks: true,
+      resolve: {
+        preserveSymlinks: true,
       },
     },
-    resolve: {
-      preserveSymlinks: true,
+
+    srcExclude,
+
+    rewrites,
+
+    themeConfig: {
+      nav: services.map((s) => ({
+        text: formatServiceName(s),
+        link: `/${s}/`,
+      })),
+
+      sidebar,
+
+      search: {
+        provider: 'local',
+      },
+
+      socialLinks,
+
+      outline: {
+        level: [2, 3],
+      },
     },
-  },
-
-  srcExclude,
-
-  rewrites,
-
-  themeConfig: {
-    nav: services.map((s) => ({
-      text: formatServiceName(s),
-      link: `/${s}/`,
-    })),
-
-    sidebar,
-
-    search: {
-      provider: 'local',
-    },
-
-    socialLinks,
-
-    outline: {
-      level: [2, 3],
-    },
-  },
+  }
 })

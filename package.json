@@ -22,7 +22,7 @@
     "scripts/",
     "templates/",
     "extensions/",
-    ".vitepress/config.ts",
+    ".vitepress/",
     "index.md",
     "docsite.config.mjs",
     "README.md",

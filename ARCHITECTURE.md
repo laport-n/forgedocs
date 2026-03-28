@@ -8,15 +8,15 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 
 | Module | Path | Purpose |
 |--------|------|---------|
-| CLI | `bin/forgedocs.mjs` | Entry point — routes subcommands (init, quickstart, dev, build, add, remove, status, score, badge, diff, lint, check, export, watch, install, doctor, mcp) |
+| CLI | `bin/forgedocs.mjs` | Entry point — routes subcommands (init, quickstart, dev, build, preview, add, remove, status, score, badge, diff, lint, check, audit, export, watch, install, doctor, mcp) |
 | Config | `lib/config.mjs` | Loads `docsite.config.mjs` with defaults (incl. plugins), validates `.repos.json` |
 | Discovery | `lib/discovery.mjs` | Recursive filesystem scan for repos with `ARCHITECTURE.md`, auto-detects common dirs |
 | Linker | `lib/linker.mjs` | Creates symlinks/junctions/copies in `content/`, with circular symlink detection |
-| Installer | `lib/installer.mjs` | Copies Claude commands, skills, and CI workflows into target repos |
+| Installer | `lib/installer.mjs` | Copies Claude commands, skills, hooks, and CI workflows into target repos; configures MCP server and post-commit audit hook in settings.json |
 | Quickstart | `lib/quickstart.mjs` | Stack detection, scaffold generation (ARCHITECTURE.md, docs/), preset support (9 stacks) |
 | Health | `lib/health.mjs` | Doc health score calculation (0–100), SVG badge generation, terminal report formatting |
-| Diff | `lib/diff.mjs` | Drift detection — parses ARCHITECTURE.md codemap/invariants, compares with filesystem |
-| Lint | `lib/lint.mjs` | Documentation linter — broken refs, stale placeholders, invariant syntax, CLAUDE.md structure, ADR format |
+| Diff | `lib/diff.mjs` | Drift detection — parses ARCHITECTURE.md codemap/invariants/data-flow, compares with filesystem |
+| Lint | `lib/lint.mjs` | Documentation linter — broken refs (in all doc files incl. ARCHITECTURE.md, README.md), stale placeholders, invariant syntax, CLAUDE.md structure, ADR format |
 | Export | `lib/export.mjs` | Export docs as JSON or self-contained HTML (with inline CSS and markdown-to-HTML conversion) |
 | Watch | `lib/watch.mjs` | File watcher daemon using `fs.watch` — detects directory/config/doc changes across repos |
 | Plugins | `lib/plugins.mjs` | Lightweight plugin system — hooks for pages, sidebar items, discovery, and build |
@@ -27,7 +27,7 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 | VitePress Sidebar | `.vitepress/sidebar.ts` | Dynamic sidebar generation per service (main, guides, features, ADRs) |
 | VitePress Utils | `.vitepress/utils.ts` | Shared helpers: `debug()`, `formatServiceName()` |
 | VitePress Config | `.vitepress/config.mts` | Orchestrator — imports modules above, defines VitePress config |
-| Templates | `templates/` | Claude Code commands (8), skills, and GitHub Actions workflow templates |
+| Templates | `templates/` | Claude Code commands (8), skills (2), hooks, and GitHub Actions workflow templates |
 | VS Code Extension | `extensions/vscode/` | Status bar health score, sidebar doc browser, drift detection, quick navigation |
 | Scripts | `scripts/` | Legacy npm run scripts (thin wrappers around lib/) |
 | Examples | `examples/` | Sample repos: single-service, monorepo, forgedocs-self |
@@ -53,7 +53,9 @@ User runs `forgedocs dev`
 
 User runs `forgedocs mcp`
   → lib/mcp-server.mjs starts JSON-RPC 2.0 server on stdio
-  → Reads .repos.json, exposes tools: list_services, get_service_docs, search_docs, check_freshness
+  → Reads .repos.json, exposes tools: list_services, get_service_docs, search_docs,
+    check_freshness, get_health_score, get_codemap, check_drift, suggest_updates,
+    query_docs, lint_docs
   → Claude Code queries docs programmatically during coding sessions
 ```
 

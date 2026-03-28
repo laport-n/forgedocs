@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "forgedocs": {
+      "command": "npx",
+      "args": [
+        "forgedocs",
+        "mcp"
+      ],
+      "description": "Documentation tools — search, health scores, drift detection, codemap, and update suggestions"
+    }
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \".claude/hooks/post-commit-audit.sh\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

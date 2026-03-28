@@ -18,7 +18,7 @@ In `bin/forgedocs.mjs`:
 | `.repos.json` | CWD | User-specific repo list |
 | `content/` | CWD | Symlinks to user's repos |
 | `docsite.config.mjs` | CWD | User's site config |
-| `.vitepress/config.ts` | CWD (copied from PKG_ROOT) | VitePress needs it in the site root |
+| `.vitepress/config.mts` | CWD (copied from PKG_ROOT) | VitePress needs it in the site root |
 | `templates/` | PKG_ROOT | Shipped with the package |
 | `node_modules/vitepress` | PKG_ROOT | Installed with the package |
 

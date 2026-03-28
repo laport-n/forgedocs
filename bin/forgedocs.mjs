@@ -39,6 +39,7 @@ Commands:
   diff [path]              Detect documentation drift (codemap vs filesystem)
   lint [path]              Lint documentation (broken refs, stale placeholders, structure)
   check [path]             Run all checks: lint + diff + score (one command for CI)
+  audit [path]             Alias for check — full documentation audit in one command
   export <format> [path]   Export docs (formats: json, html)
   watch                    Watch tracked repos for changes that need doc updates
   install <path> [--force] Install Claude Code commands into a repo
@@ -50,10 +51,11 @@ Options:
   --verbose, -v            Show detailed debug output
   --help, -h               Show this help
   --version                Show version
-  --json                   Machine-readable output (on status, score, doctor, diff)
+  --json                   Machine-readable output (on status, score, doctor, diff, check, lint)
   --preset <name>          Stack preset for quickstart (nextjs, react, fastapi, django, express, nestjs, rails, go, rust)
   --force                  Overwrite existing files
   --output, -o <file>      Output file path (for badge, export)
+  --threshold <n>          Minimum health score % to pass (on check/audit)
 `
 
 const command = process.argv[2]
@@ -582,7 +584,7 @@ async function cmdCheck() {
     try {
       result.drift = detectDrift(repoPath)
     } catch {
-      result.drift = { added: [], removed: [], stale: [], invariants: [] }
+      result.drift = { added: [], removed: [], stale: [], staleDataFlowRefs: [], invariants: [] }
     }
 
     // Score
@@ -605,7 +607,11 @@ async function cmdCheck() {
       }
 
       // Drift summary
-      const driftCount = result.drift.added.length + result.drift.removed.length + result.drift.stale.length
+      const driftCount =
+        result.drift.added.length +
+        result.drift.removed.length +
+        result.drift.stale.length +
+        (result.drift.staleDataFlowRefs?.length || 0)
       if (driftCount === 0) {
         console.log('  Drift: No drift detected')
       } else {
@@ -636,7 +642,12 @@ async function cmdCheck() {
       .flatMap((r) => r.lint)
       .filter((r) => r.severity === 'error').length
     const totalDrift = Object.values(allResults).reduce(
-      (sum, r) => sum + r.drift.added.length + r.drift.removed.length + r.drift.stale.length,
+      (sum, r) =>
+        sum +
+        r.drift.added.length +
+        r.drift.removed.length +
+        r.drift.stale.length +
+        (r.drift.staleDataFlowRefs?.length || 0),
       0,
     )
     console.log(`  Total: ${totalLintErrors} lint error(s), ${totalDrift} drift issue(s)`)
@@ -939,6 +950,7 @@ async function main() {
     case 'lint':
       return cmdLint()
     case 'check':
+    case 'audit':
       return cmdCheck()
     case 'export':
       return cmdExport()

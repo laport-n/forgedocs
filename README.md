@@ -62,6 +62,8 @@ Docs exist in wikis, but they drifted months ago. AI agents hallucinate because 
 
 **CI freshness checks** — A GitHub Action warns on PRs when code changes need doc updates. No stale docs slipping through.
 
+**Auto-audit after commits** — A Claude Code hook runs `forgedocs audit` after every `git commit`. If documentation drift is detected, Claude is warned and can auto-fix with `/doc-sync`. No manual checks needed.
+
 **Doc Health Score** — Structure (40 pts: ARCHITECTURE.md, README, CLAUDE.md, docs/, service-map) + Quality (30 pts: invariants, codemap, freshness, security) + Depth (30 pts: glossary, features, ADRs) = 100. Generate SVG badges, set CI thresholds. [Full breakdown](docs/features/health-score.md).
 
 **Drift Detection** — `forgedocs diff` compares your ARCHITECTURE.md codemap against the actual filesystem. New directories, deleted modules, stale entries — all detected without AI.
@@ -125,7 +127,7 @@ Install into any repo with `forgedocs install ~/path/to/repo`:
 | `/doc-pr` | Checks all PR changes against docs, proposes updates | Before merging a PR |
 | `/doc-ci` | Generates GitHub Actions workflow for doc freshness checks | Once per repo — CI setup |
 
-Also installs `.claude/skills/doc-review/SKILL.md` and `.github/workflows/doc-freshness.yml`.
+Also installs `.claude/skills/doc-review/SKILL.md`, `.claude/skills/doc-audit/SKILL.md` (auto-triggers after code changes), `.claude/hooks/post-commit-audit.sh` (detects drift after commits), and `.github/workflows/doc-freshness.yml`.
 
 ## MCP Server
 
@@ -162,13 +164,14 @@ Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshnes
 | `forgedocs diff [path]` | Detect documentation drift (codemap vs filesystem) |
 | `forgedocs lint [path]` | Lint docs (broken refs, stale placeholders, invariant syntax, structure) |
 | `forgedocs check [path]` | Run all checks: lint + diff + score in one command (ideal for CI) |
+| `forgedocs audit [path]` | Alias for `check` — full documentation audit in one command |
 | `forgedocs export <json\|html> [path]` | Export docs as JSON or self-contained HTML |
 | `forgedocs watch` | Watch repos for changes that need doc updates |
 | `forgedocs install <path>` | Install Claude Code commands into a repo |
 | `forgedocs doctor` | Diagnose common issues |
 | `forgedocs mcp` | Start MCP server for Claude Code |
 
-Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`, `check`) · `--preset <name>` · `--output <file>` · `--force` · `--threshold <n>` (on `check`) · `--version` · `--help`
+Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`, `check`, `lint`) · `--preset <name>` · `--output <file>` · `--force` · `--threshold <n>` (on `check`) · `--version` · `--help`
 
 ### Stack Presets
 

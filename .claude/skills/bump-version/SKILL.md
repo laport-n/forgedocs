@@ -23,9 +23,9 @@ Read `package.json` and extract the current `version` field.
 ### 3. Calculate new version
 
 Split the current version into `major.minor.patch` and increment the appropriate segment:
-- `patch`: 0.7.4 → 0.7.5
-- `minor`: 0.7.4 → 0.8.0
-- `major`: 0.7.4 → 1.0.0
+- `patch`: X.Y.Z → X.Y.(Z+1)
+- `minor`: X.Y.Z → X.(Y+1).0
+- `major`: X.Y.Z → (X+1).0.0
 
 ### 4. Update version in all locations
 
@@ -33,6 +33,10 @@ Update the version string in:
 - `package.json` — the `version` field
 
 Then run `npm install --package-lock-only` to sync `package-lock.json`.
+
+### 4.5. Verify no stale version references
+
+Search the entire codebase for the OLD version string (e.g., `grep -r "X.Y.Z" --include="*.mjs" --include="*.json" --include="*.md"`). If any file still contains the old version as a hardcoded value (not in a changelog or git log), update it or flag it. Ignore `package-lock.json`, `CHANGELOG.md`, and `node_modules/`.
 
 ### 5. Run checks
 

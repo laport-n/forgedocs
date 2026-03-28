@@ -12,11 +12,11 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 | Config | `lib/config.mjs` | Loads `docsite.config.mjs` with defaults (incl. plugins), validates `.repos.json` |
 | Discovery | `lib/discovery.mjs` | Recursive filesystem scan for repos with `ARCHITECTURE.md`, auto-detects common dirs |
 | Linker | `lib/linker.mjs` | Creates symlinks/junctions/copies in `content/`, with circular symlink detection |
-| Installer | `lib/installer.mjs` | Copies Claude commands, skills, and CI workflows into target repos |
+| Installer | `lib/installer.mjs` | Copies Claude commands, skills, hooks, and CI workflows into target repos; configures MCP server and post-commit audit hook in settings.json |
 | Quickstart | `lib/quickstart.mjs` | Stack detection, scaffold generation (ARCHITECTURE.md, docs/), preset support (9 stacks) |
 | Health | `lib/health.mjs` | Doc health score calculation (0–100), SVG badge generation, terminal report formatting |
-| Diff | `lib/diff.mjs` | Drift detection — parses ARCHITECTURE.md codemap/invariants, compares with filesystem |
-| Lint | `lib/lint.mjs` | Documentation linter — broken refs, stale placeholders, invariant syntax, CLAUDE.md structure, ADR format |
+| Diff | `lib/diff.mjs` | Drift detection — parses ARCHITECTURE.md codemap/invariants/data-flow, compares with filesystem |
+| Lint | `lib/lint.mjs` | Documentation linter — broken refs (in all doc files incl. ARCHITECTURE.md, README.md), stale placeholders, invariant syntax, CLAUDE.md structure, ADR format |
 | Export | `lib/export.mjs` | Export docs as JSON or self-contained HTML (with inline CSS and markdown-to-HTML conversion) |
 | Watch | `lib/watch.mjs` | File watcher daemon using `fs.watch` — detects directory/config/doc changes across repos |
 | Plugins | `lib/plugins.mjs` | Lightweight plugin system — hooks for pages, sidebar items, discovery, and build |

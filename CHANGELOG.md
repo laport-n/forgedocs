@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.5] — 2026-03-28
+
+### Added
+- **`forgedocs audit`** — Alias for `check`, provides a single dev-friendly command for full documentation audit (lint + drift + score)
+- **`--threshold` in CLI help** — Flag was implemented but undocumented in help text; now visible in `forgedocs --help`
+- **Data Flow drift detection** (`lib/diff.mjs`) — New `parseDataFlowRefs()` function extracts backtick-wrapped file paths from the Data Flow section and verifies they exist on disk
+- **Extended lint Rule 10** — Broken file reference checks now cover ARCHITECTURE.md, README.md, and CLAUDE.md (previously only `docs/` directory)
+- **Lint Rule 11** — CHANGELOG freshness: warns if no entry exists for the current package.json version
+- **Lint Rule 12** — Glossary placeholder detection: errors on `[To be documented]` in glossary
+- **Lint Rule 13** — Security rule enforcement: if `docs/security.md` prohibits `eval()` or hardcoded credentials, grep source files for violations
+- **`doc-audit` skill** (`.claude/skills/doc-audit/SKILL.md`) — Auto-triggers after code changes, checks structural and semantic drift, cross-references enumerations in docs vs code
+- **Post-commit audit hook** (`.claude/hooks/post-commit-audit.sh`) — Runs `forgedocs audit` after `git commit`, warns Claude if drift detected
+- **Hook installation** — `forgedocs install` now installs hooks and configures `PostToolUse` hook in `.claude/settings.json`
+- **Enumeration drift detection** in `/doc-sync` and `/doc-review` templates — explicit instructions to verify that lists of CLI commands, tools, flags, and presets match the source code
+
+### Changed
+- MCP server version now read from `package.json` instead of hardcoded
+- `/doc-sync` template: added CLI subcommand/flag and tool registration as doc update triggers
+- `/doc-review` template: added cross-reference checks for enumerated lists in README and Data Flow accuracy
+- `bump-version` skill: examples use generic `X.Y.Z` instead of hardcoded versions; added step 4.5 to verify no stale version references
+
+### Fixed
+- README.md: `--json` option was missing `lint` from supported commands list
+- CLI help text: `--json` was missing `check` and `lint` from supported commands list
+- ARCHITECTURE.md: Data Flow listed only 4 MCP tools instead of 10
+- ARCHITECTURE.md: CLI subcommand list was missing `preview`
+- ARCHITECTURE.md: Codemap descriptions for Installer, Diff, and Lint modules were outdated
+- CLAUDE.md: lib/ module list was missing `lint`; templates description omitted hooks count
+- `docs/adr/003-cwd-vs-pkg-root.md`: referenced `.vitepress/config.ts` instead of `.vitepress/config.mts`
+- `templates/claude-commands/doc-init.md`: removed hardcoded `github.com/laport-n/forgedocs` URL (violated "never hardcode org names" rule)
+
 ## [0.7.0] — 2026-03-27
 
 ### Added

@@ -1,6 +1,6 @@
 # /doc-init
 
-You are a documentation bootstrapper. Your job is to generate a complete documentation structure for the current repository, following the conventions expected by [forgedocs](https://github.com/laport-n/forgedocs).
+You are a documentation bootstrapper. Your job is to generate a complete documentation structure for the current repository, following the forgedocs conventions.
 
 ## Requirements
 

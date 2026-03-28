@@ -607,7 +607,11 @@ async function cmdCheck() {
       }
 
       // Drift summary
-      const driftCount = result.drift.added.length + result.drift.removed.length + result.drift.stale.length + (result.drift.staleDataFlowRefs?.length || 0)
+      const driftCount =
+        result.drift.added.length +
+        result.drift.removed.length +
+        result.drift.stale.length +
+        (result.drift.staleDataFlowRefs?.length || 0)
       if (driftCount === 0) {
         console.log('  Drift: No drift detected')
       } else {
@@ -638,7 +642,12 @@ async function cmdCheck() {
       .flatMap((r) => r.lint)
       .filter((r) => r.severity === 'error').length
     const totalDrift = Object.values(allResults).reduce(
-      (sum, r) => sum + r.drift.added.length + r.drift.removed.length + r.drift.stale.length + (r.drift.staleDataFlowRefs?.length || 0),
+      (sum, r) =>
+        sum +
+        r.drift.added.length +
+        r.drift.removed.length +
+        r.drift.stale.length +
+        (r.drift.staleDataFlowRefs?.length || 0),
       0,
     )
     console.log(`  Total: ${totalLintErrors} lint error(s), ${totalDrift} drift issue(s)`)

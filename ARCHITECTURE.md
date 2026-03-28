@@ -53,7 +53,9 @@ User runs `forgedocs dev`
 
 User runs `forgedocs mcp`
   → lib/mcp-server.mjs starts JSON-RPC 2.0 server on stdio
-  → Reads .repos.json, exposes tools: list_services, get_service_docs, search_docs, check_freshness
+  → Reads .repos.json, exposes tools: list_services, get_service_docs, search_docs,
+    check_freshness, get_health_score, get_codemap, check_drift, suggest_updates,
+    query_docs, lint_docs
   → Claude Code queries docs programmatically during coding sessions
 ```
 

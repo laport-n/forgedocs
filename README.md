@@ -168,7 +168,7 @@ Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshnes
 | `forgedocs doctor` | Diagnose common issues |
 | `forgedocs mcp` | Start MCP server for Claude Code |
 
-Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`, `check`) · `--preset <name>` · `--output <file>` · `--force` · `--threshold <n>` (on `check`) · `--version` · `--help`
+Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`, `check`, `lint`) · `--preset <name>` · `--output <file>` · `--force` · `--threshold <n>` (on `check`) · `--version` · `--help`
 
 ### Stack Presets
 

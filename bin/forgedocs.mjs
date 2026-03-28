@@ -50,7 +50,7 @@ Options:
   --verbose, -v            Show detailed debug output
   --help, -h               Show this help
   --version                Show version
-  --json                   Machine-readable output (on status, score, doctor, diff)
+  --json                   Machine-readable output (on status, score, doctor, diff, check, lint)
   --preset <name>          Stack preset for quickstart (nextjs, react, fastapi, django, express, nestjs, rails, go, rust)
   --force                  Overwrite existing files
   --output, -o <file>      Output file path (for badge, export)

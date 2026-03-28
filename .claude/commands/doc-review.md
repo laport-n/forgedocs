@@ -22,6 +22,7 @@ Read and list all documentation files:
 - [ ] Has a title (`# heading`)
 - [ ] Has setup/install instructions
 - [ ] Has development instructions (how to run tests, dev server)
+- [ ] **Cross-reference enumerated lists** — any tables, bullet lists, or inline lists that enumerate project features, CLI commands, flags, tools, or options must match the actual implementation. For each list found, verify the count and names against the source code (e.g., a CLI reference table should list every subcommand in the actual CLI entry point; an MCP tools list should match the tools registered in code)
 - If missing: flag as 🔴 **Critical** and offer to create one
 
 **CLAUDE.md:**
@@ -34,6 +35,7 @@ Read and list all documentation files:
 - [ ] Codemap matches actual directory structure — list the project's source directories and compare each documented module against what exists on disk
 - [ ] No module described that no longer exists
 - [ ] Data flow reflects current service dependencies
+- [ ] **Data flow cross-reference** — any file paths, module names, or tool/command lists mentioned in the Data Flow section still match the actual codebase. Count items in any enumerated list and verify against the source code
 - [ ] Invariants still hold — execute the verification command in each invariant's table row. Also execute `<!-- check: ... -->` comments found in ADR Rules sections. Report pass/fail per invariant
 
 **docs/features/*.md:**

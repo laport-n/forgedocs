@@ -28,6 +28,10 @@ For each change, determine if it impacts:
 | Changed behavior of a documented feature | `docs/features/*.md` |
 | New domain concept | `docs/glossary.md` |
 | Reversed a past architectural decision | `docs/adr/` — create new ADR |
+| New/removed CLI subcommand, flag, or option | `README.md` CLI reference + help text in source |
+| New/removed tool, hook, or plugin registration | Any doc listing that enumerates them (README, ARCHITECTURE.md Data Flow) |
+
+**Enumeration drift check:** If the diff adds or removes items that are part of a documented list (CLI commands, API endpoints, tools, flags, presets, etc.), search all markdown files for enumerations of those items and verify each list is complete. This includes inline lists (e.g., "`--json` works on X, Y, Z"), tables, and bullet lists.
 
 ### Step 3 — Show proposed updates
 For each affected doc:

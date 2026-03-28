@@ -55,6 +55,7 @@ Options:
   --preset <name>          Stack preset for quickstart (nextjs, react, fastapi, django, express, nestjs, rails, go, rust)
   --force                  Overwrite existing files
   --output, -o <file>      Output file path (for badge, export)
+  --threshold <n>          Minimum health score % to pass (on check/audit)
 `
 
 const command = process.argv[2]

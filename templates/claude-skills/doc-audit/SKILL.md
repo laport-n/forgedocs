@@ -43,9 +43,13 @@ For each **behavioral** change detected in step 1:
 
 Common patterns to check:
 - CLI help text string in entry point vs README CLI reference table
+- CLI `--flags` in code vs Options line in README and CLI help text
+- Claude command template files in `templates/` or `.claude/commands/` vs command count and table in README
+- MCP tool names registered in code vs tool list in README
 - Registered tool/hook/plugin names vs documentation lists
 - Exported function names vs codemap entries
 - Configuration options vs docs
+- Feature descriptions in README (e.g., "after every git push") vs actual implementation behavior
 
 ### 4. Report
 

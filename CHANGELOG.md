@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.1] — 2026-04-08
+
+### Added
+- **`--dry-run` flag** for `forgedocs install` — preview what would be installed without writing files
+- **Lint rule 14** — detects CLI commands in ARCHITECTURE.md codemap missing from README CLI Reference table (and vice versa)
+- **Lint rule 15** — detects Claude command count mismatch between README prose and actual template files
+- **doc-audit skill** — expanded checklist: CLI flags, MCP tool lists, command counts, feature descriptions
+
+### Fixed
+- **settings.json hook merge** — hooks now merge into existing Bash matcher instead of creating duplicates
+- **Health codemap check** — uses `parseCodemap()` for accurate validation instead of loose regex
+- **Service-map freshness** — missing "Last verified" date is now a warning (0 pts) instead of silent pass (5 pts)
+- **Lint glob patterns** — codemap entries like `src/**/*.controller.ts` no longer trigger false-positive broken-ref errors
+- **ARCHITECTURE.md** — corrected `lib/config.mjs` description (was claiming `docsite.config.mjs` loading)
+- **README drift** — fixed "after every git commit" → "after every git push", install description, plugins status, config section
+
 ## [0.8.0] — 2026-04-08
 
 ### Changed

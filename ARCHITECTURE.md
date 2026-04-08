@@ -19,6 +19,7 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 | Lint | `lib/lint.mjs` | Documentation linter — broken refs, stale placeholders, invariant syntax, CLAUDE.md structure, ADR format |
 | Export | `lib/export.mjs` | Export docs as JSON or self-contained HTML (with inline CSS and markdown-to-HTML conversion) |
 | Watch | `lib/watch.mjs` | File watcher daemon using `fs.watch` — detects directory/config/doc changes across repos |
+| Hooks | `lib/hooks.mjs` | Claude Code hook logic — pre-push doc check that runs lint, drift, and health before `git push` |
 | Plugins | `lib/plugins.mjs` | Lightweight plugin system — hooks for pages, sidebar items, discovery, and build |
 | MCP Server | `lib/mcp-server.mjs` | JSON-RPC 2.0 over stdio — exposes doc search, read, and freshness tools for AI agents |
 | Utils | `lib/utils.mjs` | `expandHome()`, `formatServiceName()`, `debug()` logging |

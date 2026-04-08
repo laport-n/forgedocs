@@ -44,6 +44,7 @@ Commands:
   install <path> [--force] Install Claude Code commands into a repo
   doctor                   Diagnose common issues
   mcp                      Start MCP server (for Claude Code integration)
+  hook <name>              Run a Claude Code hook (pre-push)
   help                     Show this help
 
 Options:
@@ -881,6 +882,21 @@ function cmdMcp() {
   startMcpServer(CWD)
 }
 
+async function cmdHook() {
+  const hookName = getPositionalArg()
+  if (hookName !== 'pre-push') {
+    console.error(`Unknown hook: ${hookName || '(none)'}`)
+    console.error('Available hooks: pre-push')
+    process.exit(1)
+  }
+
+  const { runPrePushHook } = await import('../lib/hooks.mjs')
+  const result = runPrePushHook(CWD)
+  if (result) {
+    console.log(result)
+  }
+}
+
 async function ensureSetup() {
   const repos = loadReposConfig(CONFIG_PATH)
   if (!repos) {
@@ -950,6 +966,8 @@ async function main() {
       return cmdDoctor()
     case 'mcp':
       return cmdMcp()
+    case 'hook':
+      return cmdHook()
     default:
       console.error(`Unknown command: ${command}`)
       console.log(HELP)

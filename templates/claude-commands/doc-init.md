@@ -114,6 +114,10 @@ Create `CLAUDE.md` at the repo root. This file is **read by AI coding agents at 
 - New domain vocabulary → update `docs/glossary.md`
 - New complex feature → create `docs/features/<name>.md`
 
+## Before pushing
+- Before any `git push`, run `/doc-pr` to check if documentation needs updating based on all branch changes
+- Apply needed updates automatically, commit them, then push
+
 ## AI tools available (via MCP)
 If the forgedocs MCP server is configured, these tools are available:
 - `get_codemap` — read ARCHITECTURE.md codemap as structured JSON

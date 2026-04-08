@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "forgedocs": {
+      "command": "npx",
+      "args": ["forgedocs", "mcp"],
+      "description": "Documentation tools — search, health scores, drift detection, codemap, and update suggestions"
+    }
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash(*git push*)",
+        "hook": "npx forgedocs hook pre-push",
+        "description": "Check documentation health before pushing"
+      }
+    ]
+  }
+}

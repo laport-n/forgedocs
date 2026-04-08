@@ -7,7 +7,7 @@
 
 ## Where things live
 - `bin/forgedocs.mjs` — CLI entry point, all subcommands
-- `lib/` — core modules (config, discovery, linker, installer, quickstart, health, diff, export, watch, plugins, mcp-server, utils)
+- `lib/` — core modules (config, discovery, linker, installer, quickstart, health, diff, export, watch, hooks, plugins, mcp-server, utils)
 - `templates/` — Claude Code commands (8), skills, CI workflows installed into target repos
 - `.vitepress/` — VitePress config split into modules (config, discovery, rewrites, sidebar, utils)
 - `scripts/` — legacy npm run scripts (thin wrappers around lib/)
@@ -33,6 +33,10 @@
 - New CLI subcommand → update `ARCHITECTURE.md` + `README.md` CLI Reference
 - New Claude command template → update `README.md` commands table
 - Changed discovery logic → update `ARCHITECTURE.md` data flow
+
+## Before pushing
+- Before any `git push`, run `/doc-pr` to check if documentation needs updating based on all branch changes
+- Apply needed updates automatically, commit them, then push
 
 ## AI tools available (via MCP)
 The forgedocs MCP server (`forgedocs mcp`) exposes these tools:

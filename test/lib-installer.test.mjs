@@ -36,6 +36,13 @@ describe('installer', () => {
 
     // Workflow should exist
     expect(fs.existsSync(path.join(tempRepo, '.github', 'workflows', 'doc-freshness.yml'))).toBe(true)
+
+    // Settings should have MCP and hooks
+    const settings = JSON.parse(fs.readFileSync(path.join(tempRepo, '.claude', 'settings.json'), 'utf-8'))
+    expect(settings.mcpServers.forgedocs).toBeDefined()
+    expect(settings.hooks.PreToolUse).toHaveLength(1)
+    expect(settings.hooks.PreToolUse[0].matcher).toBe('Bash(*git push*)')
+    expect(settings.hooks.PreToolUse[0].hook).toContain('forgedocs hook pre-push')
   })
 
   it('skips existing files without force', () => {

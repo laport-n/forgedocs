@@ -49,7 +49,10 @@ describe('health', () => {
         '# Glossary\n\n| Term | Def |\n|---|---|\n| Foo | Bar |\n',
       )
       fs.writeFileSync(path.join(tmpDir, 'docs', 'security.md'), '# Security')
-      fs.writeFileSync(path.join(tmpDir, 'docs', 'service-map.md'), '# Service Map')
+      fs.writeFileSync(
+        path.join(tmpDir, 'docs', 'service-map.md'),
+        `# Service Map\n\n*Last verified: ${new Date().toISOString().split('T')[0]}*\n`,
+      )
       fs.writeFileSync(path.join(tmpDir, 'docs', 'features', 'auth.md'), '# Auth')
       fs.writeFileSync(path.join(tmpDir, 'docs', 'adr', '001-decision.md'), '# ADR')
 

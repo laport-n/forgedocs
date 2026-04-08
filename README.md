@@ -127,7 +127,7 @@ Install into any repo with `forgedocs install ~/path/to/repo`:
 | `/doc-pr` | Checks all PR changes against docs, proposes updates | Before merging a PR |
 | `/doc-ci` | Generates GitHub Actions workflow for doc freshness checks | Once per repo — CI setup |
 
-Also installs `.claude/skills/doc-review/SKILL.md`, `.claude/skills/doc-audit/SKILL.md` (auto-triggers after code changes), `.claude/hooks/post-commit-audit.sh` (detects drift after commits), and `.github/workflows/doc-freshness.yml`.
+Also installs `.claude/skills/doc-review/SKILL.md`, `.claude/skills/doc-audit/SKILL.md` (auto-triggers after code changes), `.claude/hooks/post-push-doc-check.sh` (warns about doc drift after push), and `.github/workflows/doc-freshness.yml`. If `CLAUDE.md` exists, appends a documentation maintenance section as a fallback.
 
 ## MCP Server
 

@@ -12,7 +12,7 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 | Config | `lib/config.mjs` | Loads `docsite.config.mjs` with defaults (incl. plugins), validates `.repos.json` |
 | Discovery | `lib/discovery.mjs` | Recursive filesystem scan for repos with `ARCHITECTURE.md`, auto-detects common dirs |
 | Linker | `lib/linker.mjs` | Creates symlinks/junctions/copies in `content/`, with circular symlink detection |
-| Installer | `lib/installer.mjs` | Copies Claude commands, skills, hooks, and CI workflows into target repos; configures MCP server and post-commit audit hook in settings.json |
+| Installer | `lib/installer.mjs` | Copies Claude commands, skills, hooks, and CI workflows into target repos; configures MCP server and post-push doc check hook in settings.json; appends documentation maintenance section to CLAUDE.md |
 | Quickstart | `lib/quickstart.mjs` | Stack detection, scaffold generation (ARCHITECTURE.md, docs/), preset support (9 stacks) |
 | Health | `lib/health.mjs` | Doc health score calculation (0–100), SVG badge generation, terminal report formatting |
 | Diff | `lib/diff.mjs` | Drift detection — parses ARCHITECTURE.md codemap/invariants/data-flow, compares with filesystem |

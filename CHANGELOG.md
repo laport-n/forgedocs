@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.0] — 2026-04-08
+
+### Changed
+- **Post-push doc check** — Replaced post-commit audit hook with post-push doc check hook; documentation drift warnings now trigger after `git push` instead of `git commit` (non-blocking)
+- **Installer** — `forgedocs install` now appends a "Documentation maintenance" section to existing `CLAUDE.md` as a fallback for when hooks are unavailable
+- **Installer migration** — Automatically removes legacy `post-commit-audit` hook entries from `.claude/settings.json` when upgrading
+
+### Removed
+- `post-commit-audit.sh` — Replaced by `post-push-doc-check.sh`
+
 ## [0.7.5] — 2026-03-28
 
 ### Added

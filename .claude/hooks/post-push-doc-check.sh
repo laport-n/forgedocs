@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Forgedocs post-commit documentation audit hook
+# Forgedocs post-push documentation check hook
 # Installed by: forgedocs install
-# Runs after git commit via Claude Code PostToolUse hook
-# Checks for documentation drift and warns if found
+# Runs after git push via Claude Code PostToolUse hook
+# Warns if documentation drift is detected (non-blocking)
 
 set -euo pipefail
 
@@ -12,13 +12,13 @@ INPUT=$(cat)
 # Extract the command that was executed
 COMMAND=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*: *"//;s/"$//' 2>/dev/null || true)
 
-# Only run on git commit commands
+# Only run on git push commands
 case "$COMMAND" in
-  git\ commit*|git\ merge*) ;;
+  git\ push*) ;;
   *) exit 0 ;;
 esac
 
-# Run forgedocs audit if available
+# Run forgedocs check if available
 if command -v forgedocs &>/dev/null; then
   AUDIT_CMD="forgedocs"
 elif command -v npx &>/dev/null; then
@@ -29,7 +29,7 @@ fi
 
 RESULT=$($AUDIT_CMD check . --json 2>/dev/null || echo '{}')
 
-# Parse results
+# Parse lint errors
 LINT_ERRORS=$(echo "$RESULT" | node -e "
   try {
     const r=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));
@@ -39,6 +39,7 @@ LINT_ERRORS=$(echo "$RESULT" | node -e "
   } catch { console.log(0); }
 " 2>/dev/null || echo 0)
 
+# Parse drift issues
 DRIFT_ISSUES=$(echo "$RESULT" | node -e "
   try {
     const r=JSON.parse(require('fs').readFileSync('/dev/stdin','utf-8'));
@@ -54,8 +55,7 @@ DRIFT_ISSUES=$(echo "$RESULT" | node -e "
 TOTAL=$((LINT_ERRORS + DRIFT_ISSUES))
 
 if [ "$TOTAL" -gt 0 ]; then
-  echo "Documentation drift detected: ${LINT_ERRORS} lint error(s), ${DRIFT_ISSUES} drift issue(s). Run /doc-sync to update docs." >&2
-  exit 1
+  echo "Documentation drift detected after push: ${LINT_ERRORS} lint error(s), ${DRIFT_ISSUES} drift issue(s). Run /doc-sync to update docs." >&2
 fi
 
 exit 0

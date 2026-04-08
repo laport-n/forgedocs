@@ -1,13 +1,7 @@
-## Summary
+## Documentation
 
-<!-- Brief description of what this PR does -->
-
-## Changes
-
-<!-- Bullet list of changes -->
-
-## Test plan
-
-- [ ] `npm test` passes
-- [ ] `npm run lint` passes
-- [ ] Tested manually with `npm run docs`
+- [ ] If structural change: `ARCHITECTURE.md` codemap updated?
+- [ ] If new architectural decision: ADR added in `docs/adr/`?
+- [ ] If new security pattern: `docs/security.md` updated?
+- [ ] If new inter-service communication: `docs/service-map.md` updated?
+- [ ] If new domain concept: `docs/glossary.md` updated?

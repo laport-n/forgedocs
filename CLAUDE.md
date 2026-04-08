@@ -8,7 +8,7 @@
 ## Where things live
 - `bin/forgedocs.mjs` — CLI entry point, all subcommands
 - `lib/` — core modules (config, discovery, linker, installer, quickstart, health, diff, lint, export, watch, plugins, mcp-server, utils)
-- `templates/` — Claude Code commands (8), skills (2), hooks (1), CI workflows (1) installed into target repos
+- `templates/` — Claude Code commands (8), skills (2), hooks (1), CI workflow (1) installed into target repos
 - `.vitepress/` — VitePress config split into modules (config, discovery, rewrites, sidebar, utils)
 - `scripts/` — legacy npm run scripts (thin wrappers around lib/)
 - `test/` — Vitest test suite
@@ -35,6 +35,27 @@
 - New Claude skill or hook template → update `README.md` "Also installs" + `CLAUDE.md` templates line
 - Changed discovery logic → update `ARCHITECTURE.md` data flow
 - Version bump → update `CHANGELOG.md` with release notes
+
+## Pre-push checklist
+Before pushing a branch, always run through these checks:
+
+### Documentation drift
+1. Run `npx forgedocs audit .` — check for lint errors and drift
+2. If drift is detected, run `/doc-sync` to fix it
+3. Verify the "When to update documentation" rules above were followed for every change in the branch
+
+### Version bump assessment
+Evaluate whether the changes in the branch warrant a version bump:
+- **patch** — bug fixes, doc-only changes, internal refactors with no user-facing impact
+- **minor** — new features, new CLI subcommands, new templates, new MCP tools
+- **major** — breaking changes to CLI interface, config format, or template structure
+
+If a bump is needed and hasn't been done, run `/bump-version <patch|minor|major>` before pushing.
+
+### Final verification
+- `npm test` — all tests pass
+- `npm run lint` — no Biome errors
+- `CHANGELOG.md` — entry exists for the current version in package.json
 
 ## AI tools available (via MCP)
 The forgedocs MCP server (`forgedocs mcp`) exposes these tools:

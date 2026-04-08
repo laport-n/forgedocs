@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \".claude/hooks/post-commit-audit.sh\"",
+            "command": "bash \".claude/hooks/post-push-doc-check.sh\"",
             "timeout": 30
           }
         ]

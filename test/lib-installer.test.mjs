@@ -25,7 +25,6 @@ describe('installer', () => {
 
     expect(result.installed.length).toBeGreaterThan(0)
     expect(result.skipped).toHaveLength(0)
-    expect(result.updated).toHaveLength(0)
 
     // Commands should exist
     expect(fs.existsSync(path.join(tempRepo, '.claude', 'commands', 'doc-init.md'))).toBe(true)
@@ -36,6 +35,18 @@ describe('installer', () => {
 
     // Workflow should exist
     expect(fs.existsSync(path.join(tempRepo, '.github', 'workflows', 'doc-freshness.yml'))).toBe(true)
+
+    // Post-push hook should exist (not post-commit)
+    expect(fs.existsSync(path.join(tempRepo, '.claude', 'hooks', 'post-push-doc-check.sh'))).toBe(true)
+    expect(fs.existsSync(path.join(tempRepo, '.claude', 'hooks', 'post-commit-audit.sh'))).toBe(false)
+
+    // Settings should contain post-push hook, not post-commit
+    const settings = JSON.parse(fs.readFileSync(path.join(tempRepo, '.claude', 'settings.json'), 'utf-8'))
+    const postToolUse = settings.hooks?.PostToolUse || []
+    const hasPostPush = postToolUse.some((h) => h.hooks?.some((hook) => hook.command?.includes('post-push-doc-check')))
+    const hasPostCommit = postToolUse.some((h) => h.hooks?.some((hook) => hook.command?.includes('post-commit-audit')))
+    expect(hasPostPush).toBe(true)
+    expect(hasPostCommit).toBe(false)
   })
 
   it('skips existing files without force', () => {
@@ -48,5 +59,26 @@ describe('installer', () => {
     const result = installTemplates(TEMPLATES_DIR, tempRepo, { force: true })
     expect(result.updated.length).toBeGreaterThan(0)
     expect(result.installed).toHaveLength(0)
+  })
+
+  it('appends documentation maintenance section to CLAUDE.md', () => {
+    const claudeMdPath = path.join(tempRepo, 'CLAUDE.md')
+    fs.writeFileSync(claudeMdPath, '# My Project\n\n## How to run\n- npm test\n')
+
+    const result = installTemplates(TEMPLATES_DIR, tempRepo, { force: true })
+    const content = fs.readFileSync(claudeMdPath, 'utf-8')
+
+    expect(content).toContain('## Documentation maintenance')
+    expect(content).toContain('/doc-sync')
+    expect(result.updated).toContain('CLAUDE.md (added documentation maintenance section)')
+  })
+
+  it('skips CLAUDE.md if documentation maintenance section already present', () => {
+    const claudeMdPath = path.join(tempRepo, 'CLAUDE.md')
+    const existing = fs.readFileSync(claudeMdPath, 'utf-8')
+    expect(existing).toContain('Documentation maintenance')
+
+    const result = installTemplates(TEMPLATES_DIR, tempRepo, { force: true })
+    expect(result.skipped).toContain('CLAUDE.md (documentation maintenance section already present)')
   })
 })

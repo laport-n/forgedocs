@@ -62,7 +62,7 @@ Docs exist in wikis, but they drifted months ago. AI agents hallucinate because 
 
 **CI freshness checks** — A GitHub Action warns on PRs when code changes need doc updates. No stale docs slipping through.
 
-**Auto-audit after commits** — A Claude Code hook runs `forgedocs audit` after every `git commit`. If documentation drift is detected, Claude is warned and can auto-fix with `/doc-sync`. No manual checks needed.
+**Auto-audit after push** — A Claude Code hook runs `forgedocs check` after every `git push`. If documentation drift is detected, Claude is warned and can auto-fix with `/doc-sync`. No manual checks needed.
 
 **Doc Health Score** — Structure (40 pts: ARCHITECTURE.md, README, CLAUDE.md, docs/, service-map) + Quality (30 pts: invariants, codemap, freshness, security) + Depth (30 pts: glossary, features, ADRs) = 100. Generate SVG badges, set CI thresholds. [Full breakdown](docs/features/health-score.md).
 
@@ -167,11 +167,11 @@ Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshnes
 | `forgedocs audit [path]` | Alias for `check` — full documentation audit in one command |
 | `forgedocs export <json\|html> [path]` | Export docs as JSON or self-contained HTML |
 | `forgedocs watch` | Watch repos for changes that need doc updates |
-| `forgedocs install <path>` | Install Claude Code commands into a repo |
+| `forgedocs install <path>` | Install Claude Code commands, skills, hooks, MCP config into a repo |
 | `forgedocs doctor` | Diagnose common issues |
 | `forgedocs mcp` | Start MCP server for Claude Code |
 
-Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`, `check`, `lint`) · `--preset <name>` · `--output <file>` · `--force` · `--threshold <n>` (on `check`) · `--version` · `--help`
+Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`, `check`, `lint`) · `--preset <name>` · `--output <file>` · `--force` · `--dry-run` (on `install`) · `--threshold <n>` (on `check`) · `--version` · `--help`
 
 ### Stack Presets
 
@@ -199,21 +199,11 @@ Use with `forgedocs quickstart --preset <name>`:
 
 Core and Stable features follow semver. Experimental features may change between minor versions.
 
-## Plugins (Experimental)
+## Plugins (Experimental — Not Yet Wired)
 
-Extend Forgedocs with plugins in `docsite.config.mjs`:
+The plugin API is defined in `lib/plugins.mjs` but discovery and build hooks are not yet wired into the CLI or VitePress pipeline. Plugins can be loaded and tested, but won't run automatically during `forgedocs dev` or `forgedocs build`.
 
-```js
-export default {
-  plugins: [
-    'forgedocs-plugin-openapi',              // npm package
-    ['forgedocs-plugin-mermaid', { theme: 'dark' }],  // with options
-    './my-local-plugin.mjs',                 // local file
-  ]
-}
-```
-
-Plugins can add pages, sidebar items, and hook into discovery/build. See [`docs/features/plugins.md`](docs/features/plugins.md) for the full API reference.
+See [`docs/features/plugins.md`](docs/features/plugins.md) for the planned API and [`docs/adr/005-plugin-system.md`](docs/adr/005-plugin-system.md) for the design rationale.
 
 ## VS Code Extension (Experimental)
 
@@ -228,17 +218,14 @@ Activates automatically when a workspace contains `ARCHITECTURE.md`.
 
 ## Configuration
 
-```js
-// docsite.config.mjs
-export default {
-  title: 'My Docs',
-  github: 'https://github.com/my-org',
-  scanDirs: ['~/projects', '~/work'],
-  nestedDirs: ['packages', 'services', 'apps'],
-  maxDepth: 3,
-  plugins: [],
-}
-```
+Customize the site title, GitHub link, and base path via environment variables:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `FORGEDOCS_TITLE` | `Forgedocs` | Site title in header and browser tab |
+| `FORGEDOCS_GITHUB` | — | GitHub URL shown as social link |
+| `FORGEDOCS_BASE` | `/` | Base path for deployment (e.g. `/docs/`) |
+| `FORGEDOCS_EXCLUDES` | — | Comma-separated extra glob patterns to exclude |
 
 Repo registry (`.repos.json`) maps names to paths — managed by `init`/`add`/`remove`, or edit manually:
 

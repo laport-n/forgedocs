@@ -42,7 +42,7 @@ Commands:
   audit [path]             Alias for check — full documentation audit in one command
   export <format> [path]   Export docs (formats: json, html)
   watch                    Watch tracked repos for changes that need doc updates
-  install <path> [--force] Install Claude Code commands into a repo
+  install <path>           Install Claude Code commands, skills, hooks, MCP config into a repo
   doctor                   Diagnose common issues
   mcp                      Start MCP server (for Claude Code integration)
   help                     Show this help
@@ -54,6 +54,7 @@ Options:
   --json                   Machine-readable output (on status, score, doctor, diff, check, lint)
   --preset <name>          Stack preset for quickstart (nextjs, react, fastapi, django, express, nestjs, rails, go, rust)
   --force                  Overwrite existing files
+  --dry-run                Show what install would do without writing files
   --output, -o <file>      Output file path (for badge, export)
   --threshold <n>          Minimum health score % to pass (on check/audit)
 `
@@ -752,11 +753,12 @@ async function cmdWatch() {
 function cmdInstall() {
   const targetPath = getPositionalArg()
   if (!targetPath) {
-    console.error('Usage: forgedocs install <path> [--force]')
+    console.error('Usage: forgedocs install <path> [--force] [--dry-run]')
     process.exit(1)
   }
 
   const force = hasFlag('--force')
+  const dryRun = hasFlag('--dry-run')
   const targetRepo = path.resolve(expandHome(targetPath))
 
   if (!fs.existsSync(targetRepo)) {
@@ -769,17 +771,18 @@ function cmdInstall() {
     console.error(`Warning: ${targetRepo} doesn't look like a git repository (no .git/)`)
   }
 
-  const { installed, updated, skipped } = installTemplates(TEMPLATES_DIR, targetRepo, { force })
+  const { installed, updated, skipped } = installTemplates(TEMPLATES_DIR, targetRepo, { force, dryRun })
 
-  console.log(`\nForgedocs — ${path.basename(targetRepo)}\n`)
+  const prefix = dryRun ? '[dry-run] ' : ''
+  console.log(`\n${prefix}Forgedocs — ${path.basename(targetRepo)}\n`)
 
   if (installed.length > 0) {
-    console.log('Installed:')
+    console.log(dryRun ? 'Would install:' : 'Installed:')
     for (const f of installed) console.log(`  ${f}`)
   }
 
   if (updated.length > 0) {
-    console.log('\nUpdated (--force):')
+    console.log(dryRun ? '\nWould update:' : '\nUpdated (--force):')
     for (const f of updated) console.log(`  ${f}`)
   }
 
@@ -791,6 +794,8 @@ function cmdInstall() {
   const totalChanges = installed.length + updated.length
   if (totalChanges === 0 && skipped.length > 0) {
     console.log('\nAll files already installed. Use --force to update.')
+  } else if (totalChanges > 0 && dryRun) {
+    console.log('\nNo files were modified (dry run). Remove --dry-run to apply.')
   } else if (totalChanges > 0) {
     console.log(`
 Next steps:

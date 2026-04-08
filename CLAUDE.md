@@ -30,10 +30,13 @@
 
 ## When to update documentation
 - Adding/removing a lib module → update `ARCHITECTURE.md` codemap + `CLAUDE.md` lib list
-- New CLI subcommand → update `ARCHITECTURE.md` codemap + `README.md` CLI Reference + CLI help text
-- New Claude command template → update `README.md` commands table
+- New CLI subcommand → update `ARCHITECTURE.md` codemap + `README.md` CLI Reference + CLI help text + `bin/forgedocs.mjs` HELP string
+- New/changed CLI flag → update `README.md` Options line + CLI help text
+- New Claude command template → update `README.md` commands table + count
 - New Claude skill or hook template → update `README.md` "Also installs" + `CLAUDE.md` templates line
+- New MCP tool → update `README.md` MCP tools list + `ARCHITECTURE.md` data flow
 - Changed discovery logic → update `ARCHITECTURE.md` data flow
+- Changed feature behavior (e.g., hook trigger timing) → update `README.md` feature descriptions
 - Version bump → update `CHANGELOG.md` with release notes
 
 ## Pre-push checklist

@@ -58,7 +58,9 @@ Docs exist in wikis, but they drifted months ago. AI agents hallucinate because 
 
 **8 AI commands for Claude Code** — `/doc-init` generates everything from scratch. `/doc-sync` updates after changes. `/doc-review` audits quarterly. No manual markdown editing.
 
-**MCP server for Claude** — Claude queries your docs mid-task: search across repos, read any doc, check freshness. Your doc site becomes an active knowledge base.
+**Multi-agent support** — Not just Claude. Forgedocs generates instruction files for Cursor (`.cursor/rules/`), Windsurf (`.windsurfrules`), GitHub Copilot (`.github/copilot-instructions.md`), and Cline (`.clinerules`). Auto-detects which agents your team uses.
+
+**MCP server for any agent** — Any MCP-compatible agent (Claude, Cursor, Windsurf, Cline) can query your docs mid-task: search across repos, read any doc, check freshness. `forgedocs install` auto-registers the MCP server in each agent's config.
 
 **CI freshness checks** — A GitHub Action warns on PRs when code changes need doc updates. No stale docs slipping through.
 
@@ -167,11 +169,12 @@ Tools: `list_services` · `get_service_docs` · `search_docs` · `check_freshnes
 | `forgedocs audit [path]` | Alias for `check` — full documentation audit in one command |
 | `forgedocs export <json\|html> [path]` | Export docs as JSON or self-contained HTML |
 | `forgedocs watch` | Watch repos for changes that need doc updates |
-| `forgedocs install <path>` | Install Claude Code commands, skills, hooks, MCP config into a repo |
+| `forgedocs install <path>` | Install commands, skills, hooks, MCP config, and agent instruction files into a repo |
+| `forgedocs sync-agents [path]` | Regenerate agent instruction files from current project docs |
 | `forgedocs doctor` | Diagnose common issues |
-| `forgedocs mcp` | Start MCP server for Claude Code |
+| `forgedocs mcp` | Start MCP server for AI agent integration |
 
-Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`, `check`, `lint`) · `--preset <name>` · `--output <file>` · `--force` · `--dry-run` (on `install`) · `--threshold <n>` (on `check`) · `--version` · `--help`
+Options: `--verbose` · `--json` (on `status`, `doctor`, `score`, `diff`, `check`, `lint`) · `--preset <name>` · `--agents <list>` (on `install`, `quickstart`, `sync-agents`) · `--output <file>` · `--force` · `--dry-run` (on `install`) · `--threshold <n>` (on `check`) · `--version` · `--help`
 
 ### Stack Presets
 

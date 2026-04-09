@@ -57,11 +57,11 @@ describe('lint', () => {
       expect(placeholderInv.severity).toBe('error')
     })
 
-    it('reports warning when CLAUDE.md is missing', () => {
+    it('reports warning when no agent instruction file is present', () => {
       const results = lintDocs(tmpDir)
-      const claudeWarn = results.find((r) => r.id === 'no-claude')
-      expect(claudeWarn).toBeDefined()
-      expect(claudeWarn.severity).toBe('warn')
+      const agentWarn = results.find((r) => r.id === 'no-agent-instructions')
+      expect(agentWarn).toBeDefined()
+      expect(agentWarn.severity).toBe('warn')
     })
 
     it('reports warning for CLAUDE.md missing navigation sections', () => {

@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.0] — 2026-04-09
+
+### Added
+- **Multi-agent support** — `forgedocs install` and `quickstart` now generate instruction files for Cursor (`.cursor/rules/forgedocs.mdc`), Windsurf (`.windsurfrules`), GitHub Copilot (`.github/copilot-instructions.md`), and Cline (`.clinerules`) in addition to Claude Code (`CLAUDE.md`)
+- **`forgedocs sync-agents`** — new command to regenerate all agent instruction files from current project docs; supports `--dry-run` and `--json`
+- **`--agents` flag** on `install`, `quickstart`, and `sync-agents` — values: `auto` (detect, default), `all`, or comma-separated list (e.g. `claude,cursor,copilot`)
+- **`lib/agents.mjs`** — agent registry with detection, conventions, capabilities, and MCP registration for 5 agents
+- **`lib/instruction-gen.mjs`** — generates ~50-line navigation-first instruction files per agent from project structure (maps, not manuals)
+- **MCP multi-registration** — `forgedocs install` registers the MCP server in Cursor (`.cursor/mcp.json`), Windsurf (`.windsurf/mcp.json`), and Cline (`.cline/mcp.json`) configs automatically
+- **ADR 006** — documents the multi-agent design: maps not manuals, MCP as structured data layer, progressive disclosure preserved
+
+### Changed
+- **Health scoring** — `CLAUDE.md present` check renamed to `Agent instruction file present`; now awards 5 pts if ANY instruction file exists (CLAUDE.md, .cursorrules, .windsurfrules, copilot-instructions.md, .clinerules)
+- **Linting** — `no-claude` rule replaced by `no-agent-instructions`; broken-ref scanning now includes all detected instruction files
+- **Installer** — accepts `agents` option to control which agents to install for; defaults to auto-detection
+
 ## [0.8.1] — 2026-04-08
 
 ### Added

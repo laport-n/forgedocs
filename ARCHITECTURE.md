@@ -8,11 +8,13 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 
 | Module | Path | Purpose |
 |--------|------|---------|
-| CLI | `bin/forgedocs.mjs` | Entry point — routes subcommands (init, quickstart, dev, build, preview, add, remove, status, score, badge, diff, lint, check, audit, export, watch, install, doctor, mcp) |
+| CLI | `bin/forgedocs.mjs` | Entry point — routes subcommands (init, quickstart, dev, build, preview, add, remove, status, score, badge, diff, lint, check, audit, export, watch, install, sync-agents, doctor, mcp) |
 | Config | `lib/config.mjs` | Provides scan defaults (scanDirs, nestedDirs, maxDepth), loads and validates `.repos.json` |
 | Discovery | `lib/discovery.mjs` | Recursive filesystem scan for repos with `ARCHITECTURE.md`, auto-detects common dirs |
 | Linker | `lib/linker.mjs` | Creates symlinks/junctions/copies in `content/`, with circular symlink detection |
-| Installer | `lib/installer.mjs` | Copies Claude commands, skills, hooks, and CI workflows into target repos; configures MCP server and post-push doc check hook in settings.json; appends documentation maintenance section to CLAUDE.md |
+| Agents | `lib/agents.mjs` | Agent registry — detection, conventions, capabilities for Claude Code, Cursor, Windsurf, Copilot, Cline; MCP registration |
+| Instruction Gen | `lib/instruction-gen.mjs` | Generates ~50-line navigation-first instruction files per agent from project structure |
+| Installer | `lib/installer.mjs` | Copies commands, skills, hooks, CI workflows into target repos; generates instruction files and registers MCP for detected agents |
 | Quickstart | `lib/quickstart.mjs` | Stack detection, scaffold generation (ARCHITECTURE.md, docs/), preset support (9 stacks) |
 | Health | `lib/health.mjs` | Doc health score calculation (0–100), SVG badge generation, terminal report formatting |
 | Diff | `lib/diff.mjs` | Drift detection — parses ARCHITECTURE.md codemap/invariants/data-flow, compares with filesystem |
@@ -27,7 +29,7 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 | VitePress Sidebar | `.vitepress/sidebar.ts` | Dynamic sidebar generation per service (main, guides, features, ADRs) |
 | VitePress Utils | `.vitepress/utils.ts` | Shared helpers: `debug()`, `formatServiceName()` |
 | VitePress Config | `.vitepress/config.mts` | Orchestrator — imports modules above, defines VitePress config |
-| Templates | `templates/` | Claude Code commands (8), skills (2), hooks, and GitHub Actions workflow templates |
+| Templates | `templates/` | Claude Code commands (8), skills (2), hooks, and GitHub Actions workflow templates; instruction files generated dynamically by agents.mjs |
 | VS Code Extension | `extensions/vscode/` | Status bar health score, sidebar doc browser, drift detection, quick navigation |
 | Scripts | `scripts/` | Legacy npm run scripts (thin wrappers around lib/) |
 | Examples | `examples/` | Sample repos: single-service, monorepo, forgedocs-self |

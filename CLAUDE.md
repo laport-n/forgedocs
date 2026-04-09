@@ -7,7 +7,7 @@
 
 ## Where things live
 - `bin/forgedocs.mjs` — CLI entry point, all subcommands
-- `lib/` — core modules (config, discovery, linker, installer, quickstart, health, diff, lint, export, watch, plugins, mcp-server, utils)
+- `lib/` — core modules (agents, instruction-gen, config, discovery, linker, installer, quickstart, health, diff, lint, export, watch, plugins, mcp-server, utils)
 - `templates/` — Claude Code commands (8), skills (2), hooks (1), CI workflow (1) installed into target repos
 - `.vitepress/` — VitePress config split into modules (config, discovery, rewrites, sidebar, utils)
 - `scripts/` — legacy npm run scripts (thin wrappers around lib/)

@@ -42,9 +42,10 @@ Commands:
   audit [path]             Alias for check — full documentation audit in one command
   export <format> [path]   Export docs (formats: json, html)
   watch                    Watch tracked repos for changes that need doc updates
-  install <path>           Install Claude Code commands, skills, hooks, MCP config into a repo
+  install <path>           Install commands, skills, hooks, MCP config into a repo
+  sync-agents [path]       Regenerate agent instruction files from current docs
   doctor                   Diagnose common issues
-  mcp                      Start MCP server (for Claude Code integration)
+  mcp                      Start MCP server (for AI agent integration)
   help                     Show this help
 
 Options:
@@ -53,6 +54,7 @@ Options:
   --version                Show version
   --json                   Machine-readable output (on status, score, doctor, diff, check, lint)
   --preset <name>          Stack preset for quickstart (nextjs, react, fastapi, django, express, nestjs, rails, go, rust)
+  --agents <list>          Agents to install for (auto, all, or comma-separated: claude,cursor,copilot)
   --force                  Overwrite existing files
   --dry-run                Show what install would do without writing files
   --output, -o <file>      Output file path (for badge, export)
@@ -197,7 +199,8 @@ async function cmdQuickstart() {
     }
   }
 
-  const result = quickstart(targetDir, TEMPLATES_DIR, { preset, force })
+  const agentsFlag = getFlagValue('--agents') || 'auto'
+  const result = quickstart(targetDir, TEMPLATES_DIR, { preset, force, agents: agentsFlag })
 
   if (result.preset) {
     console.log(`  Detected: ${result.preset}`)
@@ -753,12 +756,13 @@ async function cmdWatch() {
 function cmdInstall() {
   const targetPath = getPositionalArg()
   if (!targetPath) {
-    console.error('Usage: forgedocs install <path> [--force] [--dry-run]')
+    console.error('Usage: forgedocs install <path> [--force] [--dry-run] [--agents <list>]')
     process.exit(1)
   }
 
   const force = hasFlag('--force')
   const dryRun = hasFlag('--dry-run')
+  const agentsFlag = getFlagValue('--agents') || 'auto'
   const targetRepo = path.resolve(expandHome(targetPath))
 
   if (!fs.existsSync(targetRepo)) {
@@ -771,7 +775,11 @@ function cmdInstall() {
     console.error(`Warning: ${targetRepo} doesn't look like a git repository (no .git/)`)
   }
 
-  const { installed, updated, skipped } = installTemplates(TEMPLATES_DIR, targetRepo, { force, dryRun })
+  const { installed, updated, skipped } = installTemplates(TEMPLATES_DIR, targetRepo, {
+    force,
+    dryRun,
+    agents: agentsFlag,
+  })
 
   const prefix = dryRun ? '[dry-run] ' : ''
   console.log(`\n${prefix}Forgedocs — ${path.basename(targetRepo)}\n`)
@@ -893,6 +901,96 @@ function cmdDoctor() {
   }
 }
 
+async function cmdSyncAgents() {
+  const { agents, resolveAgents, findInstructionFiles } = await import('../lib/agents.mjs')
+  const { generateInstructions } = await import('../lib/instruction-gen.mjs')
+
+  const targetPath = getPositionalArg() || CWD
+  const targetDir = path.resolve(expandHome(targetPath))
+  const agentsFlag = getFlagValue('--agents')
+  const dryRun = hasFlag('--dry-run')
+  const jsonOutput = hasFlag('--json')
+
+  if (!fs.existsSync(targetDir)) {
+    console.error(`Directory not found: ${targetDir}`)
+    process.exit(1)
+  }
+
+  // Determine which agents to sync: if --agents given use that, otherwise detect installed instruction files
+  let agentList
+  if (agentsFlag) {
+    agentList = resolveAgents(agentsFlag, targetDir)
+  } else {
+    const { files } = findInstructionFiles(targetDir)
+    agentList = []
+    for (const [key, agent] of Object.entries(agents)) {
+      if (files.includes(agent.instructionFile)) {
+        agentList.push(key)
+      }
+    }
+    if (agentList.length === 0) {
+      if (jsonOutput) {
+        console.log(JSON.stringify({ updated: [], skipped: [], message: 'No agent instruction files found' }))
+      } else {
+        console.log('No agent instruction files found. Run `forgedocs install --agents <list>` first.')
+      }
+      return
+    }
+  }
+
+  const updated = []
+  const skippedFiles = []
+
+  for (const agentKey of agentList) {
+    const agent = agents[agentKey]
+    if (!agent) continue
+
+    const instructionPath = path.join(targetDir, agent.instructionFile)
+
+    try {
+      const content = generateInstructions(targetDir, agentKey)
+      const existing = fs.existsSync(instructionPath) ? fs.readFileSync(instructionPath, 'utf-8') : null
+
+      if (existing === content) {
+        skippedFiles.push(agent.instructionFile)
+        continue
+      }
+
+      if (!dryRun) {
+        fs.mkdirSync(path.dirname(instructionPath), { recursive: true })
+        fs.writeFileSync(instructionPath, content)
+      }
+      updated.push(agent.instructionFile)
+    } catch (err) {
+      skippedFiles.push(`${agent.instructionFile} (${err.message})`)
+    }
+  }
+
+  if (jsonOutput) {
+    console.log(JSON.stringify({ updated, skipped: skippedFiles }, null, 2))
+    return
+  }
+
+  const prefix = dryRun ? '[dry-run] ' : ''
+  console.log(`\n${prefix}Sync agent instruction files\n`)
+
+  if (updated.length > 0) {
+    console.log(dryRun ? 'Would update:' : 'Updated:')
+    for (const f of updated) console.log(`  ${f}`)
+  }
+
+  if (skippedFiles.length > 0) {
+    console.log('\nNo changes:')
+    for (const f of skippedFiles) console.log(`  ${f}`)
+  }
+
+  if (updated.length === 0) {
+    console.log('All instruction files are up to date.')
+  }
+
+  console.log()
+}
+
 function cmdMcp() {
   startMcpServer(CWD)
 }
@@ -963,6 +1061,8 @@ async function main() {
       return cmdWatch()
     case 'install':
       return cmdInstall()
+    case 'sync-agents':
+      return cmdSyncAgents()
     case 'doctor':
       return cmdDoctor()
     case 'mcp':

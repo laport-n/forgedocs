@@ -25,7 +25,7 @@ Forgedocs is the tooling that makes both ideas practical: scaffold the docs, ver
 
 ```bash
 cd ~/my-project
-npx forgedocs quickstart  # detects stack, scaffolds docs, installs AI commands
+npx forgedocs quickstart  # detects stack, scaffolds docs, configures your AI agents
 npx forgedocs dev         # starts the doc site
 ```
 
@@ -131,9 +131,27 @@ Install into any repo with `forgedocs install ~/path/to/repo`:
 
 Also installs `.claude/skills/doc-review/SKILL.md`, `.claude/skills/doc-audit/SKILL.md` (auto-triggers after code changes), `.claude/hooks/post-push-doc-check.sh` (warns about doc drift after push), and `.github/workflows/doc-freshness.yml`. If `CLAUDE.md` exists, appends a documentation maintenance section as a fallback.
 
+### Other agents
+
+`forgedocs install` also generates instruction files for non-Claude agents (auto-detected from the repo, or pick with `--agents`):
+
+| Agent | Instruction file | MCP registration |
+|-------|------------------|------------------|
+| Claude Code | `CLAUDE.md` | `.claude/settings.json` |
+| Cursor | `.cursor/rules/forgedocs.mdc` | `.cursor/mcp.json` |
+| Windsurf | `.windsurfrules` | `.windsurf/mcp.json` |
+| GitHub Copilot | `.github/copilot-instructions.md` | — (no repo-level MCP) |
+| Cline | `.clinerules` | `.cline/mcp.json` |
+
+Instruction files are short (~50 lines) navigation-first pointers — they point to `ARCHITECTURE.md` and `docs/` rather than duplicating content. Run `forgedocs sync-agents` to regenerate them after doc changes.
+
+Interactive commands (`/doc-init`, `/doc-sync`, etc.) remain Claude-only since other agents don't support multi-step interactive workflows. Those agents use the MCP server instead — they can call `check_drift`, `search_docs`, `suggest_updates` directly.
+
 ## MCP Server
 
-Claude can query your docs programmatically. Add to `.claude/settings.json`:
+Any MCP-compatible agent can query your docs programmatically. `forgedocs install` auto-registers the server in detected agents' configs.
+
+For Claude Code (`.claude/settings.json`):
 
 ```json
 {
@@ -196,7 +214,7 @@ Use with `forgedocs quickstart --preset <name>`:
 
 | Tier | What's included |
 |------|----------------|
-| **Core** | CLI (init, dev, build, quickstart, score, diff, lint, check, install), Claude Code commands, MCP server |
+| **Core** | CLI (init, dev, build, quickstart, score, diff, lint, check, install, sync-agents), Claude Code commands, multi-agent instruction files (Cursor, Windsurf, Copilot, Cline), MCP server |
 | **Stable** | Export, watch, badge, doctor, CI workflow template |
 | **Experimental** | Plugin system, VS Code extension |
 

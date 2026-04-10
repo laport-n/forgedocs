@@ -2,7 +2,7 @@
 
 ## Overview
 
-`forgedocs quickstart` bootstraps documentation in any repository in under 30 seconds. It detects the tech stack, generates an ARCHITECTURE.md scaffold from the filesystem, creates the full docs/ structure, and installs Claude Code commands.
+`forgedocs quickstart` bootstraps documentation in any repository in under 30 seconds. It detects the tech stack, generates an ARCHITECTURE.md scaffold from the filesystem, creates the full docs/ structure, and installs Claude Code commands plus instruction files for any other agents detected in the repo (Cursor, Windsurf, Copilot, Cline).
 
 ## Preconditions
 
@@ -19,7 +19,7 @@
 
 4. **Docs scaffold** — Creates `docs/glossary.md`, `docs/security.md`, `docs/service-map.md`, `docs/features/`, `docs/adr/`. Preset-specific extras (e.g., `docs/routing.md` for Next.js, `docs/api-endpoints.md` for FastAPI).
 
-5. **Command installation** — Copies all 8 Claude commands, the doc-review skill, and the CI workflow into the target repo.
+5. **Command installation** — Delegates to `lib/installer.mjs`, which copies all 8 Claude commands, the doc-audit and doc-review skills, the post-push hook, and the CI workflow. Also generates instruction files (via `lib/instruction-gen.mjs`) and registers the MCP server for every agent resolved by `--agents` (default: auto-detect, fallback to claude).
 
 ## Stack Presets
 

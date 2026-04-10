@@ -16,7 +16,7 @@
 **Structure (40 points):**
 - ARCHITECTURE.md present (15 pts)
 - README.md present (10 pts)
-- CLAUDE.md present (5 pts)
+- Agent instruction file present (5 pts) — any of CLAUDE.md, .cursor/rules/forgedocs.mdc, .windsurfrules, .github/copilot-instructions.md, .clinerules
 - docs/ directory exists (5 pts)
 - docs/service-map.md present (5 pts)
 

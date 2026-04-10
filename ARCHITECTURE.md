@@ -2,7 +2,7 @@
 
 ## Overview
 
-Forgedocs is a local documentation viewer and maintenance framework. It auto-discovers repos containing `ARCHITECTURE.md`, symlinks their docs into a `content/` directory, and renders them as a unified VitePress site with dynamic navigation, sidebar, and full-text search. It also provides Claude Code commands to generate and maintain documentation.
+Forgedocs is a local documentation viewer and maintenance framework. It auto-discovers repos containing `ARCHITECTURE.md`, symlinks their docs into a `content/` directory, and renders them as a unified VitePress site with dynamic navigation, sidebar, and full-text search. It also generates agent instruction files and registers an MCP server for Claude Code, Cursor, Windsurf, GitHub Copilot, and Cline.
 
 ## Codemap
 
@@ -18,7 +18,7 @@ Forgedocs is a local documentation viewer and maintenance framework. It auto-dis
 | Quickstart | `lib/quickstart.mjs` | Stack detection, scaffold generation (ARCHITECTURE.md, docs/), preset support (9 stacks) |
 | Health | `lib/health.mjs` | Doc health score calculation (0–100), SVG badge generation, terminal report formatting |
 | Diff | `lib/diff.mjs` | Drift detection — parses ARCHITECTURE.md codemap/invariants/data-flow, compares with filesystem |
-| Lint | `lib/lint.mjs` | Documentation linter — broken refs (in all doc files incl. ARCHITECTURE.md, README.md), stale placeholders, invariant syntax, CLAUDE.md structure, ADR format |
+| Lint | `lib/lint.mjs` | Documentation linter — broken refs (in all doc files incl. ARCHITECTURE.md, README.md, agent instruction files), stale placeholders, invariant syntax, CLAUDE.md structure, ADR format |
 | Export | `lib/export.mjs` | Export docs as JSON or self-contained HTML (with inline CSS and markdown-to-HTML conversion) |
 | Watch | `lib/watch.mjs` | File watcher daemon using `fs.watch` — detects directory/config/doc changes across repos |
 | Plugins | `lib/plugins.mjs` | Lightweight plugin system — hooks for pages, sidebar items, discovery, and build |
@@ -53,12 +53,21 @@ User runs `forgedocs dev`
       → sidebar.ts generates sidebar per service (main, guides, features, ADRs)
   → Serves on localhost:5173 with hot-reload through symlinks
 
+User runs `forgedocs install <path>` (or `quickstart`)
+  → lib/agents.mjs resolves --agents flag (auto detects .claude/, .cursor/, .github/, etc.)
+  → lib/installer.mjs copies Claude templates (commands, skills, hooks) + CI workflow
+  → For each resolved agent:
+    → lib/instruction-gen.mjs generates ~50-line navigation-first instruction file
+    → lib/agents.mjs registers forgedocs MCP server in agent config (if supported)
+  → `forgedocs sync-agents` regenerates instruction files from current doc state
+
 User runs `forgedocs mcp`
   → lib/mcp-server.mjs starts JSON-RPC 2.0 server on stdio
   → Reads .repos.json, exposes tools: list_services, get_service_docs, search_docs,
     check_freshness, get_health_score, get_codemap, check_drift, suggest_updates,
     query_docs, lint_docs
-  → Claude Code queries docs programmatically during coding sessions
+  → Any MCP-compatible agent (Claude Code, Cursor, Windsurf, Cline) queries docs
+    programmatically during coding sessions
 ```
 
 ## Architectural Invariants
